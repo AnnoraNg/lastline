@@ -1,0 +1,3064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Last Line</title>
+<meta name="description" content="Last Line — a side-scrolling anime typing game. Type real anime quotes to survive.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230E0E1F'/%3E%3Cellipse cx='32' cy='32' rx='18' ry='16' fill='%23501010'/%3E%3Ccircle cx='38' cy='28' r='4' fill='%23FFD93D'/%3E%3Ccircle cx='38' cy='28' r='2' fill='%23FF4D6D'/%3E%3Cpath d='M22 38 L26 34 L30 38 L34 34 L38 38 L42 34 L44 40 L22 40 Z' fill='%23F0F1FA'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  --font-display: 'Russo One', 'Inter', sans-serif;
+
+  --color-background-primary: #0E0E1F;
+  --color-background-secondary: #1A1B33;
+  --color-background-tertiary: #25264A;
+  --color-background-card: #14152B;
+
+  --color-text-primary: #F0F1FA;
+  --color-text-secondary: #B5B8D4;
+  --color-text-tertiary: #7479A8;
+  --color-text-success: #4ADE80;
+  --color-text-warning: #FBBF24;
+  --color-text-danger: #FF4D6D;
+
+  --color-border-primary: #5D7BFF;
+  --color-border-secondary: #2A2B4D;
+  --color-border-tertiary: #1F2040;
+
+  --color-accent-pink: #FF4D6D;
+  --color-accent-blue: #5D7BFF;
+  --color-accent-cyan: #06D6F0;
+  --color-accent-violet: #A855F7;
+
+  --border-radius-md: 8px;
+  --border-radius-lg: 14px;
+
+  --glow-blue: 0 0 24px rgba(93,123,255,0.45);
+  --glow-pink: 0 0 24px rgba(255,77,109,0.45);
+  --glow-soft: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(168,85,247,0.18), transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(255,77,109,0.18), transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(93,123,255,0.08), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+main {
+  position: relative;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 18px 20px 32px;
+  z-index: 1;
+}
+
+/* Compact for laptop viewports (~800-900px tall after browser chrome). */
+@media (max-height: 850px) {
+  main { padding: 14px 18px 24px; }
+  .difficulty-bar { padding: 8px 12px; margin-bottom: 10px; }
+  .diff-btn { padding: 6px 10px; }
+  .hud { margin-bottom: 10px; }
+  .hud-stat { padding: 6px 10px; }
+  #word-area { padding: 14px 18px; margin-top: 12px; }
+  #game { padding: 14px; }
+  footer.credit { margin-top: 12px; }
+}
+
+/* Very short viewports — shrink the stage further. */
+@media (max-height: 700px) {
+  .difficulty-bar { padding: 6px 10px; }
+  .diff-label { font-size: 9px; min-width: 60px; letter-spacing: 3px; }
+  .diff-btn { padding: 5px 8px; min-width: 90px; }
+  .diff-btn .diff-name { font-size: 11px; }
+  .diff-btn .diff-icon { width: 14px; height: 14px; }
+  #stage { height: 240px; }
+  .lb-list { max-height: 110px; }
+  #word-area { padding: 12px 16px; margin-top: 10px; }
+  #sentence { font-size: 16px; min-height: 50px; line-height: 1.6; }
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+#game {
+  position: relative;
+  background: var(--color-background-card);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-secondary);
+  padding: 18px;
+  box-shadow: var(--glow-soft);
+}
+
+.difficulty-bar {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.06), rgba(255,77,109,0.04));
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.difficulty-bar::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--color-accent-pink), var(--color-accent-violet), var(--color-accent-blue));
+}
+
+.diff-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  padding-left: 4px;
+  min-width: 80px;
+}
+
+.diff-options {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.diff-btn {
+  flex: 1;
+  min-width: 110px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-background-primary);
+  border: 1.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.2s;
+  position: relative;
+}
+
+.diff-btn:hover {
+  background: var(--color-background-tertiary);
+  color: var(--color-text-primary);
+}
+
+.diff-btn .diff-icon {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.diff-btn .diff-name {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  flex: 1;
+  text-align: left;
+}
+
+.diff-btn .diff-tier {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.diff-btn .diff-tier i {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--color-border-secondary);
+  display: inline-block;
+}
+
+.diff-btn.easy { color: #4ADE80; }
+.diff-btn.easy .diff-tier i:nth-child(1) { background: #4ADE80; }
+
+.diff-btn.medium { color: #FBBF24; }
+.diff-btn.medium .diff-tier i:nth-child(1),
+.diff-btn.medium .diff-tier i:nth-child(2) { background: #FBBF24; }
+
+.diff-btn.hard { color: #FF4D6D; }
+.diff-btn.hard .diff-tier i { background: #FF4D6D; }
+
+.diff-btn.active {
+  background: var(--color-background-tertiary);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.diff-btn.easy.active {
+  border-color: #4ADE80;
+  box-shadow: 0 0 0 1px #4ADE80, 0 0 16px rgba(74,222,128,0.4);
+}
+.diff-btn.medium.active {
+  border-color: #FBBF24;
+  box-shadow: 0 0 0 1px #FBBF24, 0 0 16px rgba(251,191,36,0.4);
+}
+.diff-btn.hard.active {
+  border-color: #FF4D6D;
+  box-shadow: 0 0 0 1px #FF4D6D, 0 0 18px rgba(255,77,109,0.5);
+}
+
+.diff-btn.active .diff-icon { opacity: 1; }
+
+@media (max-width: 600px) {
+  .difficulty-bar { flex-direction: column; align-items: stretch; }
+  .diff-label { text-align: center; min-width: 0; }
+  .diff-btn { min-width: 0; }
+}
+
+.hud {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hud-stat {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 6px 11px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.2s;
+}
+
+.hud-stat .ico {
+  width: 14px; height: 14px;
+  display: inline-block;
+  opacity: 0.8;
+}
+
+.hud-stat .lbl {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.hud-stat .val {
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+  min-width: 30px;
+}
+
+.hud-stat.danger { border-color: rgba(255,77,109,0.4); }
+.hud-stat.danger .val { color: var(--color-text-danger); }
+
+.hud-tools {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.length-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 3px;
+}
+
+.length-toggle button {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.length-toggle button:hover { color: var(--color-text-primary); }
+
+.length-toggle button.active {
+  background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-violet));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(93,123,255,0.4);
+}
+
+#stage {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border-secondary);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.4);
+}
+
+#stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.4) 100%),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.35) 100%);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.bg-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 200%; height: 100%;
+  will-change: transform;
+}
+
+#bg-sky { z-index: 1; }
+#bg-far { z-index: 2; }
+#bg-mid { z-index: 3; }
+#bg-near { z-index: 4; }
+
+#bg-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ground {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 200%; height: 56px;
+  will-change: transform;
+  z-index: 5;
+}
+
+#human, #monster {
+  position: absolute;
+  bottom: 46px;
+  width: 56px; height: 72px;
+  transition: left 0.25s ease-out;
+  will-change: left;
+  z-index: 6;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+
+#human { left: 38%; }
+#monster { left: 6%; }
+
+#monster {
+  filter: drop-shadow(0 0 12px rgba(255,77,109,0.5)) drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+}
+
+.gap-bar {
+  height: 8px;
+  background: var(--color-background-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 12px;
+  border: 1px solid var(--color-border-tertiary);
+  position: relative;
+}
+
+.gap-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-text-success), #06D6F0);
+  transition: width 0.2s, background 0.3s;
+  box-shadow: 0 0 12px rgba(74,222,128,0.5);
+}
+
+.gap-fill.warn {
+  background: linear-gradient(90deg, var(--color-text-warning), #F97316);
+  box-shadow: 0 0 12px rgba(251,191,36,0.5);
+}
+
+.gap-fill.danger {
+  background: linear-gradient(90deg, var(--color-text-danger), #DC2626);
+  box-shadow: 0 0 16px rgba(255,77,109,0.7);
+}
+
+#word-area {
+  margin-top: 16px;
+  background: linear-gradient(180deg, var(--color-background-secondary), var(--color-background-card));
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 18px 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+#word-area::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-accent-blue), transparent);
+  animation: scanline 4s ease-in-out infinite;
+}
+
+@keyframes scanline {
+  0%, 100% { left: -100%; }
+  50% { left: 100%; }
+}
+
+#quote-source {
+  font-size: 11px;
+  color: var(--color-accent-cyan);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+#sentence {
+  font-size: 19px;
+  font-family: var(--font-mono);
+  line-height: 1.7;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  min-height: 68px;
+  word-wrap: break-word;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.ch { position: relative; padding: 1px 0; transition: color 0.1s; }
+.ch.ok { color: var(--color-text-success); text-shadow: 0 0 8px rgba(74,222,128,0.5); }
+.ch.bad {
+  color: var(--color-text-danger);
+  background: rgba(255,77,109,0.18);
+  border-radius: 3px;
+  text-shadow: 0 0 8px rgba(255,77,109,0.6);
+}
+.ch.skip {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+.ch.cur::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 2px;
+  background: var(--color-accent-cyan);
+  box-shadow: 0 0 8px var(--color-accent-cyan);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+#typed-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-primary);
+  border: 1px solid var(--color-border-secondary);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#typed-input:focus {
+  border-color: var(--color-accent-blue);
+  box-shadow: 0 0 0 2px rgba(93,123,255,0.2), var(--glow-blue);
+}
+
+#typed-input::placeholder { color: var(--color-text-tertiary); }
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.btn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:hover {
+  background: var(--color-background-tertiary);
+  border-color: var(--color-accent-blue);
+}
+
+.btn:active { transform: translateY(1px); }
+
+.btn.primary {
+  background: linear-gradient(135deg, var(--color-accent-pink), var(--color-accent-violet));
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(255,77,109,0.4);
+}
+
+.btn.primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(255,77,109,0.6);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  box-shadow: 0 2px 0 var(--color-border-tertiary);
+}
+
+#stage-label {
+  position: absolute;
+  top: 10px; right: 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+  background: rgba(14,14,31,0.85);
+  padding: 5px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-secondary);
+  z-index: 10;
+  font-weight: 600;
+  letter-spacing: 1px;
+  backdrop-filter: blur(6px);
+}
+
+#stage-label .dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--color-text-danger);
+  border-radius: 50%;
+  margin-right: 6px;
+  box-shadow: 0 0 6px var(--color-text-danger);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse { 50% { opacity: 0.4; } }
+
+#stage-banner {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 500;
+  color: white;
+  text-shadow:
+    0 2px 12px rgba(0,0,0,0.8),
+    0 0 30px rgba(255,77,109,0.6);
+  letter-spacing: 6px;
+  pointer-events: none;
+  z-index: 15;
+  opacity: 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+#stage-banner.show { animation: bannerFade 2.5s ease-out; }
+
+#stage-banner .sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 8px;
+  margin-top: 10px;
+  font-weight: 400;
+  text-transform: uppercase;
+  opacity: 0.9;
+  color: var(--color-accent-cyan);
+}
+
+@keyframes bannerFade {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); letter-spacing: 20px; }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1); letter-spacing: 6px; }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+#idle-warn {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 500;
+  color: #FFE5E5;
+  text-shadow:
+    0 2px 12px rgba(165,30,30,0.9),
+    0 0 24px rgba(255,77,109,0.7);
+  letter-spacing: 6px;
+  pointer-events: none;
+  z-index: 14;
+  opacity: 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+#idle-warn.show { animation: idlePulse 0.6s ease-in-out infinite alternate; }
+
+@keyframes idlePulse {
+  0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+#stage.surge { animation: surgeShake 0.12s linear infinite; }
+
+@keyframes surgeShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 1px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, -1px); }
+}
+
+#stage.flash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 30%, rgba(255,77,109,0.35) 100%);
+  pointer-events: none;
+  z-index: 9;
+  animation: flashFade 0.25s ease-out;
+}
+
+@keyframes flashFade { from { opacity: 1; } to { opacity: 0; } }
+
+/* End-game overlay (compact, fits in stage) */
+#overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8,8,20,0.86);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  text-align: center;
+  padding: 14px 18px;
+  z-index: 20;
+  gap: 10px;
+}
+
+#overlay .ov-summary { text-align: center; }
+
+#overlay h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--color-accent-pink), var(--color-accent-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px rgba(255,77,109,0.5));
+  margin-bottom: 4px;
+}
+
+#overlay p {
+  font-size: 12px;
+  opacity: 0.85;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+#chart-wrap {
+  width: 96%;
+  max-width: 460px;
+  height: 80px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--border-radius-md);
+  padding: 8px 10px;
+}
+
+#chart-svg { width: 100%; height: 100%; display: block; }
+
+#overlay .ov-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 460px;
+  justify-content: center;
+}
+
+#ov-name {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-md);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  outline: none;
+  min-width: 0;
+}
+
+#ov-name:focus {
+  border-color: var(--color-accent-pink);
+  box-shadow: 0 0 0 2px rgba(255,77,109,0.25);
+}
+
+#ov-name::placeholder { color: rgba(255,255,255,0.4); }
+
+#overlay .ov-actions {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+
+#overlay .ov-link {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.55);
+  font-size: 11px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 4px 8px;
+  font-family: var(--font-sans);
+  transition: color 0.2s;
+}
+
+#overlay .ov-link:hover { color: var(--color-accent-cyan); }
+
+/* Ready overlay (start gate) */
+#ready-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8,8,20,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 19;
+  transition: opacity 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+#ready-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(0);
+}
+
+.ready-card {
+  text-align: center;
+  padding: 22px 32px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.10), rgba(255,77,109,0.08));
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 0 40px rgba(168,85,247,0.08);
+  max-width: 420px;
+}
+
+.ready-eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 6px;
+  color: var(--color-accent-cyan);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.ready-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--color-accent-pink), var(--color-accent-violet) 50%, var(--color-accent-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgba(168,85,247,0.4));
+  margin-bottom: 6px;
+}
+
+.ready-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.btn.big {
+  font-size: 16px;
+  padding: 12px 36px;
+  letter-spacing: 3px;
+  border-radius: 999px;
+}
+
+.ready-meta {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Leaderboard overlay */
+#lb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8,8,20,0.92);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 22;
+  padding: 14px;
+}
+
+.lb-card {
+  background: linear-gradient(180deg, rgba(168,85,247,0.05), rgba(255,77,109,0.03));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--border-radius-lg);
+  padding: 16px 18px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+.lb-card h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: white;
+  text-align: center;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--color-accent-pink), var(--color-accent-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lb-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0,0,0,0.4);
+  border-radius: var(--border-radius-md);
+  padding: 3px;
+  margin-bottom: 12px;
+}
+
+.lb-tabs button {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lb-tabs button:hover { color: rgba(255,255,255,0.8); }
+.lb-tabs button.active {
+  background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-violet));
+  color: white;
+}
+
+.lb-list {
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: rgba(255,255,255,0.85);
+}
+
+.lb-row.you {
+  background: rgba(255,77,109,0.08);
+  border-radius: 4px;
+  border-bottom-color: rgba(255,77,109,0.2);
+  color: white;
+}
+
+.lb-row .lb-rank {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-accent-cyan);
+}
+
+.lb-row .lb-name {
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-row .lb-score {
+  font-weight: 600;
+  color: var(--color-text-success);
+}
+
+.lb-row .lb-stage,
+.lb-row .lb-len {
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+}
+
+.lb-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: rgba(255,255,255,0.45);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.lb-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+#lb-clear {
+  font-size: 10px;
+  padding: 6px 12px;
+  opacity: 0.5;
+}
+#lb-clear:hover { opacity: 1; color: var(--color-text-danger); border-color: var(--color-text-danger); }
+
+/* Series-filter trigger button — sits in the HUD next to the length toggle */
+.series-btn-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  padding: 5px 10px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.series-btn-trigger:hover {
+  background: var(--color-background-tertiary);
+  color: var(--color-text-primary);
+}
+.series-btn-trigger #series-current {
+  color: var(--color-text-primary);
+  margin-left: 2px;
+}
+.series-btn-trigger.active-filter {
+  border-color: var(--color-accent-cyan);
+  color: var(--color-accent-cyan);
+  box-shadow: 0 0 0 1px var(--color-accent-cyan), 0 0 12px rgba(6,214,240,0.35);
+}
+.series-btn-trigger.active-filter #series-current {
+  color: var(--color-accent-cyan);
+}
+
+#series-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8,8,20,0.92);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 23;
+  padding: 14px;
+}
+
+.series-card {
+  background: linear-gradient(180deg, rgba(6,214,240,0.05), rgba(168,85,247,0.04));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--border-radius-lg);
+  padding: 16px 18px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+.series-card h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.series-hint {
+  text-align: center;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+.series-hint em { color: var(--color-text-secondary); font-style: normal; }
+
+.series-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-bottom: 12px;
+  flex: 1;
+  min-height: 100px;
+}
+
+.series-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.series-pick:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--color-text-primary);
+  border-color: rgba(255,255,255,0.18);
+}
+
+.series-pick.active {
+  border-color: var(--color-accent-cyan);
+  background: rgba(6,214,240,0.10);
+  color: white;
+  box-shadow: inset 0 0 0 1px var(--color-accent-cyan);
+}
+
+.series-pick .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.series-pick .count-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.series-pick .count-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.series-pick .count-mode {
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.series-pick .count-mode.low {
+  color: var(--color-text-warning);
+}
+
+.series-pick.active .count-total { color: white; }
+.series-pick.active .count-mode { color: var(--color-accent-cyan); }
+
+.series-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Player run animation */
+.h-leg-back  { transform-origin: 28px 50px; animation: hLegBack 0.32s linear infinite; }
+.h-leg-front { transform-origin: 28px 50px; animation: hLegFront 0.32s linear infinite; }
+.h-arm-back  { transform-origin: 28px 32px; animation: hArmBack 0.32s linear infinite; }
+.h-arm-front { transform-origin: 28px 32px; animation: hArmFront 0.32s linear infinite; }
+.h-body { transform-origin: 28px 38px; animation: hBob 0.32s linear infinite; }
+.h-scarf { transform-origin: 22px 30px; animation: scarfWave 0.5s ease-in-out infinite alternate; }
+.h-hair-back { animation: hairFlow 0.6s ease-in-out infinite alternate; transform-origin: 28px 16px; }
+
+@keyframes hLegBack  { 0%, 100% { transform: rotate(-50deg); } 50% { transform: rotate(40deg); } }
+@keyframes hLegFront { 0%, 100% { transform: rotate(40deg); } 50% { transform: rotate(-50deg); } }
+@keyframes hArmBack  { 0%, 100% { transform: rotate(45deg); } 50% { transform: rotate(-35deg); } }
+@keyframes hArmFront { 0%, 100% { transform: rotate(-35deg); } 50% { transform: rotate(45deg); } }
+@keyframes hBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes scarfWave { 0% { transform: rotate(-8deg) skewX(-4deg); } 100% { transform: rotate(8deg) skewX(4deg); } }
+@keyframes hairFlow { 0% { transform: translateX(0); } 100% { transform: translateX(-2px); } }
+
+/* Monster run animation */
+.m-leg-back  { transform-origin: 28px 56px; animation: mLegBack 0.26s linear infinite; }
+.m-leg-front { transform-origin: 28px 56px; animation: mLegFront 0.26s linear infinite; }
+.m-arm-back  { transform-origin: 28px 36px; animation: mArmBack 0.26s linear infinite; }
+.m-arm-front { transform-origin: 28px 36px; animation: mArmFront 0.26s linear infinite; }
+.m-body { transform-origin: 28px 38px; animation: mBob 0.26s linear infinite; }
+.m-aura { animation: auraPulse 0.8s ease-in-out infinite alternate; transform-origin: 28px 38px; }
+.m-eye-glow { animation: eyeGlow 1.2s ease-in-out infinite alternate; transform-origin: center; }
+
+@keyframes mLegBack  { 0%, 100% { transform: rotate(-55deg); } 50% { transform: rotate(45deg); } }
+@keyframes mLegFront { 0%, 100% { transform: rotate(45deg); } 50% { transform: rotate(-55deg); } }
+@keyframes mArmBack  { 0%, 100% { transform: rotate(40deg); } 50% { transform: rotate(-40deg); } }
+@keyframes mArmFront { 0%, 100% { transform: rotate(-40deg); } 50% { transform: rotate(40deg); } }
+@keyframes mBob { 0%, 100% { transform: translateY(0) skewX(-3deg); } 50% { transform: translateY(-3px) skewX(3deg); } }
+@keyframes auraPulse { 0% { opacity: 0.5; transform: scale(1); } 100% { opacity: 0.85; transform: scale(1.08); } }
+@keyframes eyeGlow {
+  0% { filter: drop-shadow(0 0 4px #FFD93D); }
+  100% { filter: drop-shadow(0 0 10px #FF4D6D); }
+}
+
+.dust {
+  position: absolute;
+  bottom: 46px;
+  width: 8px; height: 8px;
+  background: rgba(180,140,90,0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Atmospheric particles per stage */
+@keyframes drift {
+  0% { transform: translateX(0) translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(-1200px) translateY(var(--drift-y, 0)); opacity: 0; }
+}
+
+@keyframes embers {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(-260px) translateX(var(--ember-x, -40px)); opacity: 0; }
+}
+
+@keyframes leafFall {
+  0% { transform: translate(0,-30px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(-300px, 280px) rotate(720deg); opacity: 0; }
+}
+
+@keyframes sandBlow {
+  0% { transform: translateX(0); opacity: 0; }
+  20% { opacity: 0.6; }
+  100% { transform: translateX(-1400px); opacity: 0; }
+}
+
+@keyframes drip {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(280px); opacity: 0; }
+}
+
+@keyframes snowFall {
+  0% { transform: translate(0, 0) rotate(0); opacity: 0; }
+  10% { opacity: 0.9; }
+  100% { transform: translate(var(--snow-x, -30px), 320px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes moteFloat {
+  0% { transform: translate(0, 0); opacity: 0.4; }
+  100% { transform: translate(-30px, -20px); opacity: 1; }
+}
+
+@keyframes bubbleRise {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 0.8; }
+  100% { transform: translate(var(--bubble-x, 0), -300px); opacity: 0; }
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes shootStar {
+  0% { transform: translate(0, 0); opacity: 0; }
+  5% { opacity: 1; }
+  20% { opacity: 1; }
+  100% { transform: translate(-1100px, 280px); opacity: 0; }
+}
+
+footer.credit {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  letter-spacing: 1px;
+}
+
+footer.credit a { color: var(--color-text-secondary); text-decoration: none; }
+footer.credit a:hover { color: var(--color-accent-blue); }
+</style>
+</head>
+<body>
+
+<main>
+<h1 class="sr-only">Last Line — an anime typing chase game across 10 stages. Type to survive.</h1>
+
+<div id="game">
+  <div class="difficulty-bar" role="group" aria-label="Difficulty">
+    <div class="diff-label">Difficulty</div>
+    <div class="diff-options">
+      <button class="diff-btn easy" data-diff="easy">
+        <svg class="diff-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 L14 3.5 L14 8 Q14 13 8 15 Q2 13 2 8 L2 3.5 Z" fill="currentColor"/></svg>
+        <span class="diff-name">Easy</span>
+        <span class="diff-tier"><i></i><i></i><i></i></span>
+      </button>
+      <button class="diff-btn medium active" data-diff="medium">
+        <svg class="diff-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 L9.5 8 L9.5 11 L11 11 L11 14 L5 14 L5 11 L6.5 11 L6.5 8 Z" fill="currentColor"/></svg>
+        <span class="diff-name">Medium</span>
+        <span class="diff-tier"><i></i><i></i><i></i></span>
+      </button>
+      <button class="diff-btn hard" data-diff="hard">
+        <svg class="diff-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 Q14 1 14 7 Q14 10 12 11 L12 14 L10 14 L10 12 L6 12 L6 14 L4 14 L4 11 Q2 10 2 7 Q2 1 8 1 Z M5.5 6.5 A1.5 1.5 0 1 1 5.5 6.6 M10.5 6.5 A1.5 1.5 0 1 1 10.5 6.6" fill="currentColor"/><circle cx="5.5" cy="6.5" r="1.2" fill="#000"/><circle cx="10.5" cy="6.5" r="1.2" fill="#000"/></svg>
+        <span class="diff-name">Hard</span>
+        <span class="diff-tier"><i></i><i></i><i></i></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-stat danger" title="Monster's typing speed">
+      <span class="lbl">monster</span>
+      <span class="val" id="hud-stage">40 wpm</span>
+    </div>
+    <div class="hud-stat" title="Your current typing speed">
+      <span class="lbl">your wpm</span>
+      <span class="val" id="hud-wpm">0</span>
+    </div>
+    <div class="hud-stat" title="Cumulative correct characters">
+      <span class="lbl">score</span>
+      <span class="val" id="hud-score">0</span>
+    </div>
+    <div class="hud-stat" title="Distance traveled">
+      <span class="lbl">dist</span>
+      <span class="val" id="hud-dist">0m</span>
+    </div>
+    <div class="hud-tools">
+      <div class="length-toggle" id="length-toggle" role="group" aria-label="Quote length">
+        <button data-len="short" class="active">short</button>
+        <button data-len="medium">medium</button>
+        <button data-len="long">long</button>
+      </div>
+      <button class="series-btn-trigger" id="open-series" title="Filter quotes by series">series · <span id="series-current">all</span></button>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="stage-label"><span class="dot"></span><span id="stage-label-text">monster: 40 wpm</span></div>
+    <div class="bg-layer" id="bg-sky"></div>
+    <div class="bg-layer" id="bg-far"></div>
+    <div class="bg-layer" id="bg-mid"></div>
+    <div class="bg-layer" id="bg-near"></div>
+    <div class="ground" id="ground"></div>
+    <div id="bg-particles"></div>
+
+    <svg id="monster" viewBox="0 0 56 72" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="mBodyGrad" cx="50%" cy="40%">
+          <stop offset="0%" stop-color="#7A1D2E"/>
+          <stop offset="60%" stop-color="#3A0A18"/>
+          <stop offset="100%" stop-color="#1A0408"/>
+        </radialGradient>
+        <radialGradient id="mAuraGrad" cx="50%" cy="50%">
+          <stop offset="0%" stop-color="rgba(168,85,247,0.6)"/>
+          <stop offset="60%" stop-color="rgba(120,30,80,0.3)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <radialGradient id="mEyeGrad" cx="50%" cy="50%">
+          <stop offset="0%" stop-color="#FFE066"/>
+          <stop offset="40%" stop-color="#FF4D6D"/>
+          <stop offset="100%" stop-color="#7A0011"/>
+        </radialGradient>
+        <linearGradient id="mClawGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FFFEF0"/>
+          <stop offset="100%" stop-color="#A8A090"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Aura -->
+      <ellipse class="m-aura" cx="28" cy="38" rx="32" ry="32" fill="url(#mAuraGrad)"/>
+
+      <!-- Smoke trail -->
+      <g class="m-aura" opacity="0.5">
+        <ellipse cx="46" cy="34" rx="10" ry="6" fill="#2A0A28" opacity="0.6"/>
+        <ellipse cx="52" cy="40" rx="6" ry="4" fill="#1F0820" opacity="0.5"/>
+      </g>
+
+      <!-- Back leg -->
+      <g class="m-leg-back">
+        <path d="M22 50 Q20 58 18 64 L24 66 Q26 60 28 52 Z" fill="#1A0408"/>
+        <path d="M16 64 Q14 66 16 68 L24 68 L26 66 Q24 64 22 64 Z" fill="#0A0408"/>
+        <!-- claws -->
+        <path d="M16 67 L14 70 M19 68 L18 71 M22 68 L22 71" stroke="url(#mClawGrad)" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Back arm -->
+      <g class="m-arm-back">
+        <path d="M14 32 Q8 38 6 46 L12 48 Q14 40 18 36 Z" fill="#1A0408"/>
+        <path d="M6 46 Q4 50 8 52 L12 50 Z" fill="#0A0408"/>
+        <path d="M5 50 L2 53 M8 51 L6 54 M11 51 L11 54" stroke="url(#mClawGrad)" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Body / torso -->
+      <g class="m-body">
+        <!-- Spiky back fur -->
+        <path d="M10 34 L8 28 L14 30 L12 22 L18 28 L20 18 L24 26 L28 14 L32 26 L36 18 L38 28 L42 22 L40 30 L46 28 L44 34 Z" fill="#1A0408"/>
+        <!-- Main body -->
+        <ellipse cx="28" cy="38" rx="22" ry="18" fill="url(#mBodyGrad)"/>
+        <!-- Belly highlight -->
+        <ellipse cx="28" cy="44" rx="14" ry="6" fill="rgba(122,29,46,0.4)"/>
+        <!-- Head/snout -->
+        <path d="M44 30 Q52 28 50 38 Q48 36 42 38 Q40 34 44 30 Z" fill="#3A0A18"/>
+        <!-- Glowing eye 1 (main) -->
+        <circle class="m-eye-glow" cx="40" cy="32" r="5" fill="rgba(255,77,109,0.4)"/>
+        <circle cx="40" cy="32" r="3" fill="url(#mEyeGrad)"/>
+        <circle cx="40.5" cy="31.5" r="1.2" fill="#0A0408"/>
+        <circle cx="41" cy="31" r="0.5" fill="#FFFEF0"/>
+        <!-- Glowing eye 2 (smaller) -->
+        <circle cx="34" cy="28" r="2" fill="url(#mEyeGrad)"/>
+        <circle cx="34" cy="28" r="0.8" fill="#0A0408"/>
+        <!-- Teeth -->
+        <path d="M40 40 L42 38 L44 40 L46 38 L48 40 L48 42 L40 42 Z" fill="url(#mClawGrad)"/>
+        <path d="M41 40 L42 42 M44 40 L44 42 M47 40 L47 42" stroke="#7A0011" stroke-width="0.4"/>
+        <!-- Drool -->
+        <path d="M44 42 Q44 46 43 48" stroke="#FFE066" stroke-width="0.8" fill="none" opacity="0.7"/>
+        <!-- Horns -->
+        <path d="M14 22 Q10 12 8 8 L12 10 L16 18 Z" fill="#1A0408"/>
+        <path d="M22 18 Q20 6 16 4 L20 8 L24 14 Z" fill="#1A0408"/>
+        <!-- Tail -->
+        <path d="M48 38 Q56 40 56 48 Q52 46 48 44 Z" fill="#1A0408"/>
+        <circle cx="55" cy="46" r="2" fill="#FF4D6D" opacity="0.7"/>
+      </g>
+
+      <!-- Front arm -->
+      <g class="m-arm-front">
+        <path d="M30 32 Q36 38 38 46 L32 48 Q30 40 26 36 Z" fill="#3A0A18"/>
+        <path d="M38 46 Q40 50 36 52 L32 50 Z" fill="#1A0408"/>
+        <path d="M39 50 L42 53 M36 51 L38 54 M33 51 L33 54" stroke="url(#mClawGrad)" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Front leg -->
+      <g class="m-leg-front">
+        <path d="M30 50 Q32 58 34 64 L28 66 Q26 60 24 52 Z" fill="#3A0A18"/>
+        <path d="M28 64 Q30 66 28 68 L36 68 L38 66 Q36 64 34 64 Z" fill="#1A0408"/>
+        <path d="M30 67 L28 70 M33 68 L32 71 M36 68 L36 71" stroke="url(#mClawGrad)" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+    </svg>
+
+    <svg id="human" viewBox="0 0 56 72" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hHairGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#0A0E1F"/>
+          <stop offset="55%" stop-color="#1F2A50"/>
+          <stop offset="100%" stop-color="#5D7BFF"/>
+        </linearGradient>
+        <linearGradient id="hHairHi" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#5D7BFF" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#5D7BFF" stop-opacity="0.9"/>
+        </linearGradient>
+        <linearGradient id="hSkinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#FCDCC8"/>
+          <stop offset="100%" stop-color="#E5B59C"/>
+        </linearGradient>
+        <linearGradient id="hJacketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#4F8DF7"/>
+          <stop offset="60%" stop-color="#2461C8"/>
+          <stop offset="100%" stop-color="#0E2F7C"/>
+        </linearGradient>
+        <linearGradient id="hJacketHi" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#7AAFFF" stop-opacity="0.5"/>
+          <stop offset="60%" stop-color="#7AAFFF" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="hPantsGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#252B48"/>
+          <stop offset="100%" stop-color="#0A0E1F"/>
+        </linearGradient>
+        <linearGradient id="hScarfGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FF6B85"/>
+          <stop offset="60%" stop-color="#E22B4A"/>
+          <stop offset="100%" stop-color="#7A0011"/>
+        </linearGradient>
+        <linearGradient id="hHeadbandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#E22B4A"/>
+          <stop offset="100%" stop-color="#FF6B85"/>
+        </linearGradient>
+        <linearGradient id="hSwordGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#3A2A18"/>
+          <stop offset="50%" stop-color="#7A6038"/>
+          <stop offset="100%" stop-color="#3A2A18"/>
+        </linearGradient>
+        <radialGradient id="hAura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(93,123,255,0.35)"/>
+          <stop offset="70%" stop-color="rgba(93,123,255,0.05)"/>
+          <stop offset="100%" stop-color="rgba(93,123,255,0)"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Subtle aura behind player -->
+      <ellipse cx="28" cy="38" rx="26" ry="32" fill="url(#hAura)"/>
+
+      <!-- Drop shadow -->
+      <ellipse cx="28" cy="69" rx="14" ry="2" fill="#000" opacity="0.5"/>
+
+      <!-- Back arm with glove -->
+      <g class="h-arm-back">
+        <rect x="24" y="30" width="6" height="13" rx="2.5" fill="url(#hJacketGrad)"/>
+        <rect x="23.5" y="30" width="7" height="2" fill="#5D7BFF" opacity="0.5"/>
+        <rect x="24" y="42" width="6" height="3.5" rx="1" fill="#0A0E1F"/>
+        <rect x="24" y="42" width="6" height="0.8" fill="#FFE066"/>
+        <ellipse cx="27" cy="48" rx="3.2" ry="3.5" fill="url(#hSkinGrad)"/>
+        <line x1="25" y1="49.5" x2="25" y2="51.5" stroke="#C09080" stroke-width="0.4"/>
+        <line x1="27" y1="50" x2="27" y2="52" stroke="#C09080" stroke-width="0.4"/>
+        <line x1="29" y1="49.5" x2="29" y2="51.5" stroke="#C09080" stroke-width="0.4"/>
+      </g>
+
+      <!-- Back leg -->
+      <g class="h-leg-back">
+        <rect x="24.5" y="48" width="7" height="20" rx="3" fill="url(#hPantsGrad)"/>
+        <rect x="24.5" y="56" width="7" height="2" fill="#0A0E1F" opacity="0.6"/>
+        <rect x="24.5" y="48" width="1.5" height="20" fill="#0A0E1F" opacity="0.4"/>
+        <ellipse cx="28" cy="68" rx="6.5" ry="2.5" fill="#E22B4A"/>
+        <ellipse cx="28" cy="68" rx="6.5" ry="2.5" fill="#FF6B85" opacity="0.6"/>
+        <rect x="22" y="65" width="12" height="2" fill="#FFE066" rx="1"/>
+        <rect x="22" y="67" width="12" height="0.7" fill="#FFFEF0" opacity="0.8"/>
+      </g>
+
+      <!-- Scarf flowing back -->
+      <g class="h-scarf">
+        <path d="M16 28 Q4 30 -1 38 Q8 35 18 32 L20 30 Z" fill="url(#hScarfGrad)"/>
+        <path d="M2 36 Q6 38 10 36" stroke="#7A0011" stroke-width="0.5" fill="none" opacity="0.6"/>
+        <path d="M-1 38 L-3 42 L-2 39 M2 39 L0 43 L1 40" stroke="#E22B4A" stroke-width="0.7" stroke-linecap="round"/>
+      </g>
+
+      <!-- Sword sheath at hip (rendered with body) -->
+      <g class="h-body">
+        <rect x="36" y="42" width="2.5" height="14" rx="0.8" fill="url(#hSwordGrad)"/>
+        <rect x="35.5" y="42" width="3.5" height="1.6" fill="#FFE066"/>
+        <rect x="35" y="55.5" width="4" height="1.4" fill="#FFE066"/>
+        <rect x="36.6" y="42" width="0.8" height="14" fill="#FFE066" opacity="0.4"/>
+      </g>
+
+      <!-- Body / Head -->
+      <g class="h-body">
+        <!-- Hair back -->
+        <g class="h-hair-back">
+          <path d="M13 14 Q9 3 28 1 Q47 3 43 14 Q45 24 40 30 L14 30 Q9 24 13 14 Z" fill="url(#hHairGrad)"/>
+          <path d="M40 8 Q46 14 43 22 L40 16 Z" fill="#0A0E1F"/>
+          <path d="M16 8 Q10 14 13 22 L16 16 Z" fill="#0A0E1F"/>
+          <path d="M22 22 Q24 28 22 32 L20 26 Z" fill="#0A0E1F" opacity="0.7"/>
+          <path d="M34 22 Q32 28 34 32 L36 26 Z" fill="#0A0E1F" opacity="0.7"/>
+        </g>
+
+        <!-- Face -->
+        <ellipse cx="28" cy="16.5" rx="10.5" ry="11.5" fill="url(#hSkinGrad)"/>
+        <!-- Jawline shadow -->
+        <path d="M19 22 Q28 28 37 22 Q35 26 28 27 Q21 26 19 22 Z" fill="#D8A088" opacity="0.5"/>
+        <!-- Cheek blush -->
+        <ellipse cx="20" cy="20" rx="2.2" ry="1.4" fill="#F8A8A0" opacity="0.7"/>
+        <ellipse cx="36" cy="20" rx="2.2" ry="1.4" fill="#F8A8A0" opacity="0.7"/>
+
+        <!-- Hair front (bangs, layered) -->
+        <path d="M16 8 Q20 0 28 1 Q36 0 40 8 Q41 13 37 14 L35 11 Q32 9 28 12 Q24 9 21 11 L19 14 Q15 13 16 8 Z" fill="url(#hHairGrad)"/>
+        <path d="M22 5 Q24 8 26 12 L24 13 Q22 11 22 8 Z" fill="#5D7BFF" opacity="0.4"/>
+        <path d="M30 5 Q32 8 34 12 L32 13 Q30 11 30 8 Z" fill="#5D7BFF" opacity="0.4"/>
+        <!-- Side hair tufts (sharper) -->
+        <path d="M14 14 Q12 22 16 27 L18 22 Z" fill="#0A0E1F"/>
+        <path d="M42 14 Q44 22 40 27 L38 22 Z" fill="#0A0E1F"/>
+
+        <!-- Headband -->
+        <rect x="15" y="11" width="26" height="3.2" fill="url(#hHeadbandGrad)" rx="0.5"/>
+        <rect x="15" y="13.4" width="26" height="0.8" fill="#7A0011" opacity="0.7"/>
+        <!-- Headband badge -->
+        <circle cx="28" cy="12.6" r="1.6" fill="#FFE066"/>
+        <circle cx="28" cy="12.6" r="1.6" fill="none" stroke="#7A0011" stroke-width="0.3"/>
+        <path d="M27 11.7 L27 13.5 L28.6 13.5" stroke="#7A0011" stroke-width="0.5" fill="none" stroke-linecap="round"/>
+        <!-- Headband knot tail -->
+        <path d="M14 13 Q10 13.5 6 17 L11 14.5 L9 18 L13 16 Z" fill="#E22B4A"/>
+        <path d="M5 17 L3 19 M7 19 L5 21" stroke="#7A0011" stroke-width="0.5"/>
+
+        <!-- Eyebrows (more expressive — determined arch) -->
+        <path d="M19 13.2 Q22 11.5 25.5 12.8" stroke="#0A0E1F" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+        <path d="M30.5 12.8 Q34 11.5 37 13.2" stroke="#0A0E1F" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+
+        <!-- Eyes (anime style, large, two-tone iris) -->
+        <ellipse cx="23" cy="17.4" rx="2.7" ry="3.7" fill="#FFFEF8"/>
+        <ellipse cx="33" cy="17.4" rx="2.7" ry="3.7" fill="#FFFEF8"/>
+        <ellipse cx="23" cy="17.6" rx="2.1" ry="3.1" fill="#06D6F0"/>
+        <ellipse cx="33" cy="17.6" rx="2.1" ry="3.1" fill="#06D6F0"/>
+        <ellipse cx="23" cy="18.6" rx="2.0" ry="2.0" fill="#5D7BFF" opacity="0.7"/>
+        <ellipse cx="33" cy="18.6" rx="2.0" ry="2.0" fill="#5D7BFF" opacity="0.7"/>
+        <ellipse cx="23" cy="17.8" rx="1.0" ry="2.1" fill="#0A0E1F"/>
+        <ellipse cx="33" cy="17.8" rx="1.0" ry="2.1" fill="#0A0E1F"/>
+        <!-- Anime sparkle highlights -->
+        <circle cx="23.7" cy="15.8" r="0.9" fill="#FFFEF8"/>
+        <circle cx="33.7" cy="15.8" r="0.9" fill="#FFFEF8"/>
+        <circle cx="22.4" cy="18.6" r="0.5" fill="#FFFEF8"/>
+        <circle cx="32.4" cy="18.6" r="0.5" fill="#FFFEF8"/>
+        <line x1="20.8" y1="17" x2="21.8" y2="17.4" stroke="#FFFEF8" stroke-width="0.4" opacity="0.7"/>
+        <line x1="30.8" y1="17" x2="31.8" y2="17.4" stroke="#FFFEF8" stroke-width="0.4" opacity="0.7"/>
+
+        <!-- Nose hint -->
+        <path d="M28 19 L27.4 21 L28.6 21 Z" fill="#D8A088" opacity="0.4"/>
+
+        <!-- Mouth (determined, slight smirk) -->
+        <path d="M25 22.8 Q28 24 31 22.5" stroke="#7A0011" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <path d="M25 22.8 Q28 23.5 31 22.5" stroke="#FFFEF8" stroke-width="0.4" fill="none" opacity="0.4"/>
+
+        <!-- Sweat drop (running effort) -->
+        <path d="M37.5 18 Q38.5 21 36.5 22 Q35.5 21 37.5 18 Z" fill="#06D6F0" opacity="0.85"/>
+        <circle cx="37" cy="20.5" r="0.3" fill="#FFFEF8" opacity="0.9"/>
+
+        <!-- Neck -->
+        <rect x="25" y="26" width="6" height="3" fill="url(#hSkinGrad)"/>
+        <path d="M25 28 L31 28 L31 29 L25 29 Z" fill="#D8A088" opacity="0.4"/>
+
+        <!-- Body / jacket -->
+        <path d="M18 28 L38 28 L40 50 L16 50 Z" fill="url(#hJacketGrad)"/>
+        <!-- Jacket highlight (left lit edge) -->
+        <path d="M18 28 L24 28 L23 50 L16 50 Z" fill="url(#hJacketHi)"/>
+        <!-- Inner shading (chest seam area) -->
+        <path d="M22 28 L34 28 L34 32 L22 32 Z" fill="#0E2F7C" opacity="0.4"/>
+        <!-- Shoulder pads -->
+        <path d="M16 28 L24 28 L23 35 L15 33 Z" fill="#5D7BFF" opacity="0.35"/>
+        <path d="M32 28 L40 28 L41 33 L33 35 Z" fill="#5D7BFF" opacity="0.35"/>
+        <!-- Shoulder badge -->
+        <circle cx="20" cy="32" r="1.3" fill="#FFE066"/>
+        <circle cx="20" cy="32" r="0.6" fill="#7A0011"/>
+        <!-- Collar -->
+        <path d="M22 28 L28 32 L34 28 L36 30 L28 36 L20 30 Z" fill="#FFE066"/>
+        <path d="M22 28 L28 32 L34 28" stroke="#C09020" stroke-width="0.4" fill="none"/>
+        <!-- Zipper line with teeth -->
+        <line x1="28" y1="33" x2="28" y2="50" stroke="#0A0E1F" stroke-width="0.9" opacity="0.8"/>
+        <g opacity="0.5">
+          <line x1="27" y1="35" x2="29" y2="35" stroke="#0A0E1F" stroke-width="0.3"/>
+          <line x1="27" y1="38" x2="29" y2="38" stroke="#0A0E1F" stroke-width="0.3"/>
+          <line x1="27" y1="41" x2="29" y2="41" stroke="#0A0E1F" stroke-width="0.3"/>
+          <line x1="27" y1="44" x2="29" y2="44" stroke="#0A0E1F" stroke-width="0.3"/>
+        </g>
+        <!-- Pocket -->
+        <rect x="32" y="38" width="6" height="6" fill="none" stroke="#0A0E1F" stroke-width="0.5" opacity="0.55" rx="1"/>
+        <line x1="32" y1="40" x2="38" y2="40" stroke="#0A0E1F" stroke-width="0.4" opacity="0.4"/>
+        <!-- Belt -->
+        <rect x="16" y="46" width="24" height="3.2" fill="#0A0E1F"/>
+        <rect x="26" y="46" width="4" height="3.2" fill="#FFE066"/>
+        <rect x="27" y="47" width="2" height="1.2" fill="#7A6020"/>
+      </g>
+
+      <!-- Front arm with glove -->
+      <g class="h-arm-front">
+        <rect x="26" y="30" width="6" height="13" rx="2.5" fill="url(#hJacketGrad)"/>
+        <rect x="25.5" y="30" width="7" height="2" fill="#5D7BFF" opacity="0.5"/>
+        <rect x="26" y="42" width="6" height="3.5" rx="1" fill="#0A0E1F"/>
+        <rect x="26" y="42" width="6" height="0.8" fill="#FFE066"/>
+        <ellipse cx="29" cy="48" rx="3.2" ry="3.5" fill="url(#hSkinGrad)"/>
+        <line x1="27" y1="49.5" x2="27" y2="51.5" stroke="#C09080" stroke-width="0.4"/>
+        <line x1="29" y1="50" x2="29" y2="52" stroke="#C09080" stroke-width="0.4"/>
+        <line x1="31" y1="49.5" x2="31" y2="51.5" stroke="#C09080" stroke-width="0.4"/>
+      </g>
+
+      <!-- Front leg -->
+      <g class="h-leg-front">
+        <rect x="26.5" y="48" width="7" height="20" rx="3" fill="url(#hPantsGrad)"/>
+        <rect x="26.5" y="56" width="7" height="2" fill="#0A0E1F" opacity="0.6"/>
+        <rect x="26.5" y="48" width="1.5" height="20" fill="#5D7BFF" opacity="0.15"/>
+        <ellipse cx="30" cy="68" rx="6.5" ry="2.5" fill="#E22B4A"/>
+        <ellipse cx="30" cy="68" rx="6.5" ry="2.5" fill="#FF6B85" opacity="0.6"/>
+        <rect x="24" y="65" width="12" height="2" fill="#FFE066" rx="1"/>
+        <rect x="24" y="67" width="12" height="0.7" fill="#FFFEF0" opacity="0.8"/>
+      </g>
+    </svg>
+
+    <div id="stage-banner"></div>
+    <div id="idle-warn">keep typing!</div>
+
+    <div id="ready-overlay">
+      <div class="ready-card">
+        <div class="ready-eyebrow">Last Line</div>
+        <h3 class="ready-title">Type to survive</h3>
+        <p class="ready-sub">10 stages · idle 7s and the monster surges</p>
+        <button class="btn primary big" id="ready-start-btn">Start Game</button>
+        <div class="ready-meta" id="ready-meta">medium · short quotes</div>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div class="ov-summary">
+        <h3 id="ov-title">Game Over</h3>
+        <p id="ov-sub">— score: 0 · 0m · 0 wpm · stage 1/10</p>
+      </div>
+      <div id="chart-wrap"><svg id="chart-svg" preserveAspectRatio="none"></svg></div>
+      <div class="ov-row">
+        <input id="ov-name" placeholder="your name" maxlength="14" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button class="btn primary" id="ov-btn">Save & Try Again</button>
+      </div>
+      <div class="ov-actions">
+        <button class="ov-link" id="ov-leaderboard">view leaderboard</button>
+        <button class="ov-link" id="ov-skip">skip without saving</button>
+      </div>
+    </div>
+
+    <div id="series-overlay">
+      <div class="series-card">
+        <h3>Select Series</h3>
+        <p class="series-hint">Numbers are quotes available in the current length mode · series with under <span id="series-thresh-label">50</span> in this mode are bundled under <em>Other</em> · switch length mode to see different qualifying series</p>
+        <div class="series-grid" id="series-grid"></div>
+        <div class="series-actions">
+          <button class="btn" id="series-back">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lb-overlay">
+      <div class="lb-card">
+        <h3>Leaderboard</h3>
+        <div class="lb-tabs">
+          <button data-difftab="easy" class="active">Easy</button>
+          <button data-difftab="medium">Medium</button>
+          <button data-difftab="hard">Hard</button>
+        </div>
+        <div class="lb-list" id="lb-list"></div>
+        <div class="lb-actions">
+          <button class="btn" id="lb-back">Back</button>
+          <button class="btn" id="lb-clear" title="Erase all leaderboard entries">clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gap-bar">
+    <div class="gap-fill" id="gap-fill" style="width:60%"></div>
+  </div>
+
+  <div id="word-area">
+    <div id="quote-source"></div>
+    <div id="sentence"></div>
+    <input id="typed-input" placeholder="click here and start typing..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="restart">restart</button>
+    <button class="btn" id="view-leaderboard">leaderboard</button>
+    <span>stuck? press <span class="kbd">tab</span> to skip · idle 7s and the monster surges</span>
+  </div>
+</div>
+
+<footer class="credit">
+  Real anime quotes · 10 stages · easy / medium / hard · type or get caught
+</footer>
+</main>
+
+<!-- Quote pools — edit these files to add more quotes. See header comments in each. -->
+<script src="quotes_short.js"></script>
+<script src="quotes_medium.js"></script>
+<script src="quotes_long.js"></script>
+
+<script>
+
+const STAGES = [
+  {
+    name:"plains",
+    sky:["#FFD3A8","#FFB1B8","#A8C8FF","#85A8E8"],
+    far:"#5A7A9E", mid:"#3D6488", near:"#1F4068",
+    foliage:"#5DCAA5", accent:"#FFE066",
+    ground:"#3B6D11", grass:"#5DCAA5",
+    wpm:{easy:40, medium:60, hard:90}, thresh:0,
+    particles:"clouds"
+  },
+  {
+    name:"forest",
+    sky:["#FFB07C","#FF7C5C","#7C3C5C","#3C1C44"],
+    far:"#2C4030", mid:"#1F3024", near:"#0F2018",
+    foliage:"#3D6048", accent:"#FFD93D",
+    ground:"#1F3018", grass:"#4A6A40",
+    wpm:{easy:55, medium:75, hard:110}, thresh:150,
+    particles:"leaves"
+  },
+  {
+    name:"desert",
+    sky:["#FFD088","#FF8855","#D04A4A","#5A1A2A"],
+    far:"#A85530", mid:"#7A3820", near:"#552410",
+    foliage:"#DC9050", accent:"#FFE066",
+    ground:"#3A1A08", grass:"#A85530",
+    wpm:{easy:70, medium:90, hard:130}, thresh:350,
+    particles:"sand"
+  },
+  {
+    name:"caves",
+    sky:["#0A0E20","#181C38","#241848","#0A0418"],
+    far:"#1A1830", mid:"#0F0E1F", near:"#08060F",
+    foliage:"#A855F7", accent:"#06D6F0",
+    ground:"#0A0808", grass:"#3A2855",
+    wpm:{easy:85, medium:110, hard:155}, thresh:600,
+    particles:"crystals"
+  },
+  {
+    name:"volcano",
+    sky:["#1A0408","#3A0A18","#7A1A0A","#FF4D2A"],
+    far:"#3A0A08", mid:"#1F0404", near:"#0A0202",
+    foliage:"#FF4D2A", accent:"#FFE066",
+    ground:"#0A0202", grass:"#7A1A0A",
+    wpm:{easy:105, medium:135, hard:185}, thresh:900,
+    particles:"embers"
+  },
+  {
+    name:"tundra",
+    sky:["#0E1A3A","#2A3A6A","#5A7AB8","#B8D8FF"],
+    far:"#5A6A88", mid:"#3A4868", near:"#1F2A48",
+    foliage:"#E0F0FF", accent:"#06D6F0",
+    ground:"#D8E8FF", grass:"#A8C8E8",
+    wpm:{easy:125, medium:160, hard:215}, thresh:1250,
+    particles:"snow"
+  },
+  {
+    name:"peaks",
+    sky:["#3A4868","#5A7AB8","#8AA8D8","#D8E8F8"],
+    far:"#1F2A48", mid:"#2A3A5A", near:"#3A5070",
+    foliage:"#1A4030", accent:"#FFFEF0",
+    ground:"#5A7090", grass:"#3A5070",
+    wpm:{easy:145, medium:185, hard:250}, thresh:1650,
+    particles:"mist"
+  },
+  {
+    name:"ruins",
+    sky:["#5A4828","#9A7848","#D8B868","#F8E8A8"],
+    far:"#7A5830", mid:"#5A4020", near:"#3A2810",
+    foliage:"#5A8030", accent:"#FFD93D",
+    ground:"#3A2810", grass:"#7A6840",
+    wpm:{easy:170, medium:215, hard:285}, thresh:2100,
+    particles:"motes"
+  },
+  {
+    name:"abyss",
+    sky:["#020410","#0A1830","#0E2848","#143868"],
+    far:"#0A1830", mid:"#08203A", near:"#04182C",
+    foliage:"#06D6F0", accent:"#A855F7",
+    ground:"#020408", grass:"#0E2848",
+    wpm:{easy:200, medium:245, hard:320}, thresh:2600,
+    particles:"bubbles"
+  },
+  {
+    name:"void",
+    sky:["#000004","#08041A","#1A0A3A","#3A1A6A"],
+    far:"#1A0A3A", mid:"#0A0420", near:"#040208",
+    foliage:"#A855F7", accent:"#FFFEF0",
+    ground:"#040208", grass:"#1A0A3A",
+    wpm:{easy:230, medium:280, hard:360}, thresh:3200,
+    particles:"stars"
+  }
+];
+
+const DIFFICULTIES = {
+  easy:   { label: "Easy",   color: "#4ADE80", glow: "rgba(74,222,128,0.5)" },
+  medium: { label: "Medium", color: "#FBBF24", glow: "rgba(251,191,36,0.5)" },
+  hard:   { label: "Hard",   color: "#FF4D6D", glow: "rgba(255,77,109,0.5)" }
+};
+let difficulty = "medium";
+
+const IDLE_THRESHOLD = 7000;
+const IDLE_SURGE_MULT = 6;
+const SCORE_MULT = { easy: 1, medium: 2, hard: 3 };
+const LB_KEY = "lastLineLeaderboard_v1";
+const NAME_KEY = "lastLinePlayerName";
+const MAX_LB_ENTRIES = 10;
+const SERIES_THRESHOLD = 50;       // a series needs >= this many quotes IN THE CURRENT LENGTH MODE to qualify; otherwise it goes into "Other" for that mode
+const SERIES_KEY = "lastLineSeries"; // persisted selection
+let SERIES_COUNTS = {};            // {seriesName: {short, medium, long, total}}
+let SERIES_QUALIFYING_PER_MODE = { short: new Set(), medium: new Set(), long: new Set() };
+let SERIES_LIST_PER_MODE = { short: [], medium: [], long: [] };
+let SERIES_OTHER_COUNT_PER_MODE = { short: 0, medium: 0, long: 0 };
+let selectedSeries = "All";        // current filter — "All", "Other", or a real series name
+
+let humanX = 38, monsterX = 6;
+let scrollX = 0, scrollFar = 0, scrollMid = 0, scrollNear = 0;
+let stageIdx = 0;
+let score = 0, distance = 0;
+let sentence = "", typed = "", skipped = new Set();
+let totalChars = 0, correctChars = 0, gameStart = 0;
+let running = false;
+let lastTick = 0;
+let dustTimer = 0;
+let usedQuotes = new Set();
+let lengthMode = "short";
+let wpmHistory = [];
+let wpmSampleTimer = 0;
+let lastInputTime = 0;
+let isSurging = false;
+
+const stage = document.getElementById("stage");
+const bgSky = document.getElementById("bg-sky");
+const bgFar = document.getElementById("bg-far");
+const bgMid = document.getElementById("bg-mid");
+const bgNear = document.getElementById("bg-near");
+const bgParticles = document.getElementById("bg-particles");
+const ground = document.getElementById("ground");
+const human = document.getElementById("human");
+const monster = document.getElementById("monster");
+const sentenceEl = document.getElementById("sentence");
+const sourceEl = document.getElementById("quote-source");
+const input = document.getElementById("typed-input");
+const gapFill = document.getElementById("gap-fill");
+const stageLabel = document.getElementById("stage-label-text");
+const stageBanner = document.getElementById("stage-banner");
+const idleWarn = document.getElementById("idle-warn");
+const overlay = document.getElementById("overlay");
+
+function svgEl(html) { return html; }
+
+// Tracks which stage index the scenery DOM currently reflects, so we don't
+// re-randomize the silhouettes for the same stage (which looked like the
+// scene was switching mid-run).
+let lastBuiltSceneryIdx = null;
+
+function buildSceneryFor(idx) {
+  if (idx === lastBuiltSceneryIdx) return;
+  lastBuiltSceneryIdx = idx;
+  buildScenery(STAGES[idx]);
+}
+
+function buildScenery(s) {
+  // Sky with multi-stop gradient
+  const skyStops = s.sky.map((c, i) => `${c} ${(i / (s.sky.length - 1)) * 100}%`).join(", ");
+  bgSky.style.background = `linear-gradient(180deg, ${skyStops})`;
+
+  // Add a sun/moon/aurora depending on stage
+  let skyExtras = "";
+  if (s.name === "plains") {
+    skyExtras = `<svg style="position:absolute;left:70%;top:18%;" width="60" height="60" viewBox="0 0 60 60"><defs><radialGradient id="sunPlains"><stop offset="0%" stop-color="#FFFEF0"/><stop offset="50%" stop-color="#FFD06A"/><stop offset="100%" stop-color="rgba(255,208,106,0)"/></radialGradient></defs><circle cx="30" cy="30" r="28" fill="url(#sunPlains)"/><circle cx="30" cy="30" r="16" fill="#FFD06A"/><circle cx="30" cy="30" r="12" fill="#FFE8B0"/></svg>
+    <!-- distant birds -->
+    <svg style="position:absolute;left:40%;top:25%;" width="40" height="20" viewBox="0 0 40 20"><path d="M2 10 Q5 6 8 10 Q11 6 14 10" stroke="#3D6488" stroke-width="0.8" fill="none" stroke-linecap="round"/><path d="M22 14 Q25 10 28 14 Q31 10 34 14" stroke="#3D6488" stroke-width="0.7" fill="none" stroke-linecap="round"/></svg>`;
+  } else if (s.name === "forest") {
+    skyExtras = `<svg style="position:absolute;left:65%;top:14%;" width="80" height="80" viewBox="0 0 80 80"><defs><radialGradient id="sun2"><stop offset="0%" stop-color="#FFFEF0"/><stop offset="60%" stop-color="#FFB85C"/><stop offset="100%" stop-color="rgba(255,184,92,0)"/></radialGradient></defs><circle cx="40" cy="40" r="36" fill="url(#sun2)"/><circle cx="40" cy="40" r="14" fill="#FFEAB0"/></svg>
+    <!-- light rays -->
+    <svg style="position:absolute;left:60%;top:18%;width:200px;height:200px;" viewBox="0 0 200 200"><path d="M40 40 L0 200 L80 40 Z" fill="#FFE8A0" opacity="0.06"/><path d="M40 40 L80 200 L120 40 Z" fill="#FFE8A0" opacity="0.05"/></svg>`;
+  } else if (s.name === "desert") {
+    skyExtras = `<svg style="position:absolute;left:55%;top:30%;" width="100" height="100" viewBox="0 0 100 100"><defs><radialGradient id="sun3"><stop offset="0%" stop-color="#FFFEF0"/><stop offset="50%" stop-color="#FF8855"/><stop offset="100%" stop-color="rgba(255,136,85,0)"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#sun3)"/><circle cx="50" cy="50" r="20" fill="#FFE066"/></svg>
+    <!-- distant vultures -->
+    <svg style="position:absolute;left:30%;top:18%;" width="50" height="20" viewBox="0 0 50 20"><path d="M2 12 Q6 8 10 12 Q14 8 18 12" stroke="#552410" stroke-width="0.8" fill="none" stroke-linecap="round"/><path d="M28 16 Q31 13 34 16 Q37 13 40 16" stroke="#552410" stroke-width="0.7" fill="none" stroke-linecap="round"/></svg>`;
+  } else if (s.name === "caves") {
+    let stars = "";
+    for (let i = 0; i < 30; i++) {
+      const x = Math.random() * 100, y = Math.random() * 60, r = Math.random() * 1.2 + 0.3;
+      stars += `<circle cx="${x}%" cy="${y}%" r="${r}" fill="#A855F7" opacity="${0.4 + Math.random() * 0.5}"/>`;
+    }
+    skyExtras = `<svg style="position:absolute;inset:0;width:100%;height:100%;">${stars}</svg>`;
+  } else if (s.name === "volcano") {
+    skyExtras = `<svg style="position:absolute;left:60%;top:20%;" width="120" height="80" viewBox="0 0 120 80"><defs><radialGradient id="hellsun"><stop offset="0%" stop-color="#FFE066"/><stop offset="40%" stop-color="#FF4D2A"/><stop offset="100%" stop-color="rgba(255,77,42,0)"/></radialGradient></defs><ellipse cx="60" cy="40" rx="50" ry="30" fill="url(#hellsun)"/></svg>
+    <!-- ash clouds -->
+    <svg style="position:absolute;left:10%;top:8%;width:300px;height:80px;" viewBox="0 0 300 80"><ellipse cx="60" cy="40" rx="60" ry="20" fill="#1A0408" opacity="0.5"/><ellipse cx="180" cy="30" rx="80" ry="22" fill="#1A0408" opacity="0.4"/></svg>`;
+  } else if (s.name === "tundra") {
+    // aurora bands + moon
+    skyExtras = `<svg style="position:absolute;left:5%;top:8%;width:90%;height:50%;" viewBox="0 0 800 200" preserveAspectRatio="none"><defs><linearGradient id="aurora1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(74,222,128,0.7)"/><stop offset="100%" stop-color="rgba(74,222,128,0)"/></linearGradient><linearGradient id="aurora2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(168,85,247,0.6)"/><stop offset="100%" stop-color="rgba(168,85,247,0)"/></linearGradient></defs><path d="M0 80 Q200 40 400 70 T800 60 L800 180 Q600 140 400 170 T0 160 Z" fill="url(#aurora1)" opacity="0.7"/><path d="M0 100 Q200 60 400 90 T800 80 L800 200 Q600 160 400 190 T0 180 Z" fill="url(#aurora2)" opacity="0.6"/></svg>
+    <svg style="position:absolute;left:75%;top:12%;" width="70" height="70" viewBox="0 0 70 70"><defs><radialGradient id="moonGlow"><stop offset="0%" stop-color="rgba(255,255,255,0.8)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient></defs><circle cx="35" cy="35" r="32" fill="url(#moonGlow)"/><circle cx="35" cy="35" r="18" fill="#F0F8FF"/><circle cx="30" cy="32" r="2" fill="#A8C8E8" opacity="0.5"/><circle cx="40" cy="37" r="1.5" fill="#A8C8E8" opacity="0.5"/></svg>`;
+  } else if (s.name === "peaks") {
+    // high-altitude clouds
+    skyExtras = `<svg style="position:absolute;left:0;top:25%;width:100%;height:30%;" viewBox="0 0 800 100" preserveAspectRatio="none"><ellipse cx="120" cy="50" rx="80" ry="14" fill="#FFFFFF" opacity="0.3"/><ellipse cx="320" cy="60" rx="100" ry="16" fill="#FFFFFF" opacity="0.4"/><ellipse cx="540" cy="45" rx="90" ry="12" fill="#FFFFFF" opacity="0.35"/><ellipse cx="720" cy="65" rx="70" ry="14" fill="#FFFFFF" opacity="0.3"/></svg>
+    <svg style="position:absolute;left:68%;top:14%;" width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" fill="#FFFEF0" opacity="0.85"/></svg>`;
+  } else if (s.name === "ruins") {
+    skyExtras = `<svg style="position:absolute;left:50%;top:18%;" width="120" height="80" viewBox="0 0 120 80"><defs><radialGradient id="rsun"><stop offset="0%" stop-color="#FFE8A8"/><stop offset="60%" stop-color="#D8A848"/><stop offset="100%" stop-color="rgba(216,168,72,0)"/></radialGradient></defs><ellipse cx="60" cy="40" rx="55" ry="32" fill="url(#rsun)"/><circle cx="60" cy="40" r="22" fill="#FFE8A8" opacity="0.85"/></svg>
+    <!-- distant temple silhouette -->
+    <svg style="position:absolute;left:10%;top:38%;width:80%;height:18%;" viewBox="0 0 800 60" preserveAspectRatio="none"><path d="M0 60 L80 40 L120 30 L130 8 L140 30 L180 40 L260 35 L300 25 L310 5 L320 25 L360 35 L500 30 L800 50 L800 60 Z" fill="#3A2810" opacity="0.7"/></svg>`;
+  } else if (s.name === "abyss") {
+    let glows = "";
+    for (let i = 0; i < 18; i++) {
+      const x = Math.random() * 100, y = 20 + Math.random() * 60, r = 0.6 + Math.random() * 1.4;
+      const c = Math.random() > 0.5 ? "#06D6F0" : "#A855F7";
+      glows += `<circle cx="${x}%" cy="${y}%" r="${r}" fill="${c}" opacity="${0.5 + Math.random() * 0.4}"/>`;
+    }
+    skyExtras = `<svg style="position:absolute;inset:0;width:100%;height:100%;">${glows}</svg>
+    <svg style="position:absolute;left:0;top:0;width:100%;height:100%;" viewBox="0 0 800 280" preserveAspectRatio="none"><defs><radialGradient id="abyssGlow"><stop offset="0%" stop-color="rgba(6,214,240,0.15)"/><stop offset="100%" stop-color="rgba(6,214,240,0)"/></radialGradient></defs><ellipse cx="400" cy="120" rx="420" ry="100" fill="url(#abyssGlow)"/></svg>`;
+  } else if (s.name === "void") {
+    let stars = "";
+    for (let i = 0; i < 60; i++) {
+      const x = Math.random() * 100, y = Math.random() * 80, r = 0.3 + Math.random() * 1.4;
+      const op = 0.4 + Math.random() * 0.6;
+      const c = Math.random() > 0.85 ? "#FF4D6D" : Math.random() > 0.7 ? "#A855F7" : "#FFFEF0";
+      stars += `<circle cx="${x}%" cy="${y}%" r="${r}" fill="${c}" opacity="${op}"/>`;
+    }
+    skyExtras = `<svg style="position:absolute;inset:0;width:100%;height:100%;">${stars}</svg>
+    <!-- nebula -->
+    <svg style="position:absolute;left:0;top:0;width:100%;height:100%;" viewBox="0 0 800 280" preserveAspectRatio="none"><defs><radialGradient id="neb1"><stop offset="0%" stop-color="rgba(168,85,247,0.45)"/><stop offset="100%" stop-color="rgba(168,85,247,0)"/></radialGradient><radialGradient id="neb2"><stop offset="0%" stop-color="rgba(255,77,109,0.35)"/><stop offset="100%" stop-color="rgba(255,77,109,0)"/></radialGradient></defs><ellipse cx="200" cy="80" rx="200" ry="80" fill="url(#neb1)"/><ellipse cx="600" cy="120" rx="220" ry="90" fill="url(#neb2)"/></svg>
+    <!-- distant planet -->
+    <svg style="position:absolute;left:72%;top:14%;" width="80" height="80" viewBox="0 0 80 80"><defs><radialGradient id="planet" cx="35%" cy="35%"><stop offset="0%" stop-color="#A855F7"/><stop offset="100%" stop-color="#1A0A3A"/></radialGradient></defs><circle cx="40" cy="40" r="22" fill="url(#planet)"/><ellipse cx="40" cy="40" rx="34" ry="6" fill="none" stroke="#A855F7" stroke-width="1" opacity="0.4" transform="rotate(-15 40 40)"/></svg>`;
+  }
+  bgSky.innerHTML = skyExtras;
+
+  // Far layer — distant silhouette mountains/hills
+  bgFar.innerHTML = "";
+  for (let i = 0; i < 10; i++) {
+    const x = i * 200 + Math.random() * 30;
+    const h = 100 + Math.random() * 50;
+    const w = 220 + Math.random() * 80;
+    let shape;
+    if (s.name === "caves" || s.name === "volcano") {
+      shape = `<path d="M0 ${h} L${w*0.15} ${h*0.3} L${w*0.3} ${h*0.55} L${w*0.45} ${h*0.15} L${w*0.6} ${h*0.4} L${w*0.78} ${h*0.2} L${w} ${h} Z" fill="${s.far}" opacity="0.65"/>`;
+    } else if (s.name === "desert") {
+      shape = `<path d="M0 ${h} L${w*0.1} ${h*0.55} L${w*0.25} ${h*0.5} L${w*0.4} ${h*0.5} L${w*0.55} ${h*0.4} L${w*0.7} ${h*0.4} L${w*0.85} ${h*0.5} L${w} ${h} Z" fill="${s.far}" opacity="0.7"/>`;
+    } else {
+      shape = `<path d="M0 ${h} L${w*0.2} ${h*0.4} L${w*0.4} ${h*0.65} L${w*0.6} ${h*0.25} L${w*0.8} ${h*0.55} L${w} ${h} Z" fill="${s.far}" opacity="0.7"/>`;
+    }
+    bgFar.innerHTML += `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${shape}</svg>`;
+  }
+
+  // Mid layer — closer terrain
+  bgMid.innerHTML = "";
+  for (let i = 0; i < 14; i++) {
+    const x = i * 140 + Math.random() * 25;
+    const h = 70 + Math.random() * 50;
+    const w = 150 + Math.random() * 60;
+    let shape;
+    if (s.name === "caves") {
+      shape = `<path d="M0 0 L${w*0.15} ${h*0.7} L${w*0.3} 0 L${w*0.45} ${h*0.5} L${w*0.6} 0 L${w*0.75} ${h*0.6} L${w*0.9} 0 L${w} ${h*0.4} L${w} ${h} L0 ${h} Z" fill="${s.mid}" opacity="0.85"/>
+      <path d="M0 ${h} L${w*0.2} ${h*0.4} L${w*0.4} ${h*0.7} L${w*0.6} ${h*0.3} L${w*0.8} ${h*0.6} L${w} ${h}" fill="${s.mid}" opacity="0.9"/>`;
+    } else if (s.name === "volcano") {
+      shape = `<path d="M0 ${h} L${w*0.2} ${h*0.5} L${w*0.4} ${h*0.65} L${w*0.5} ${h*0.3} L${w*0.65} ${h*0.55} L${w*0.85} ${h*0.4} L${w} ${h} Z" fill="${s.mid}" opacity="0.9"/>
+      <path d="M${w*0.3} ${h*0.5} L${w*0.4} ${h*0.7} M${w*0.6} ${h*0.4} L${w*0.7} ${h*0.6}" stroke="#FF4D2A" stroke-width="1.5" opacity="0.7"/>`;
+    } else if (s.name === "tundra") {
+      // jagged ice peaks
+      shape = `<path d="M0 ${h} L${w*0.2} ${h*0.2} L${w*0.3} ${h*0.45} L${w*0.5} ${h*0.1} L${w*0.65} ${h*0.4} L${w*0.85} ${h*0.25} L${w} ${h} Z" fill="${s.mid}" opacity="0.9"/>
+      <path d="M${w*0.2} ${h*0.2} L${w*0.27} ${h*0.35} L${w*0.18} ${h*0.3} Z" fill="#FFFFFF" opacity="0.7"/>
+      <path d="M${w*0.5} ${h*0.1} L${w*0.58} ${h*0.3} L${w*0.42} ${h*0.25} Z" fill="#FFFFFF" opacity="0.8"/>
+      <path d="M${w*0.85} ${h*0.25} L${w*0.92} ${h*0.4} L${w*0.78} ${h*0.4} Z" fill="#FFFFFF" opacity="0.6"/>`;
+    } else if (s.name === "peaks") {
+      // sharp mountain peaks
+      shape = `<path d="M0 ${h} L${w*0.15} ${h*0.5} L${w*0.3} ${h*0.05} L${w*0.45} ${h*0.45} L${w*0.6} ${h*0.15} L${w*0.78} ${h*0.4} L${w*0.9} ${h*0.2} L${w} ${h} Z" fill="${s.mid}" opacity="0.9"/>
+      <path d="M${w*0.3} ${h*0.05} L${w*0.4} ${h*0.3} L${w*0.2} ${h*0.3} Z" fill="#FFFFFF" opacity="0.85"/>
+      <path d="M${w*0.6} ${h*0.15} L${w*0.7} ${h*0.35} L${w*0.5} ${h*0.35} Z" fill="#FFFFFF" opacity="0.7"/>`;
+    } else if (s.name === "ruins") {
+      // broken columns and arches
+      shape = `<rect x="${w*0.15}" y="${h*0.3}" width="${w*0.06}" height="${h*0.7}" fill="${s.mid}" opacity="0.9"/>
+      <rect x="${w*0.14}" y="${h*0.28}" width="${w*0.08}" height="${h*0.05}" fill="${s.mid}" opacity="0.95"/>
+      <rect x="${w*0.4}" y="${h*0.2}" width="${w*0.06}" height="${h*0.8}" fill="${s.mid}" opacity="0.9"/>
+      <rect x="${w*0.39}" y="${h*0.18}" width="${w*0.08}" height="${h*0.05}" fill="${s.mid}" opacity="0.95"/>
+      <rect x="${w*0.65}" y="${h*0.4}" width="${w*0.06}" height="${h*0.6}" fill="${s.mid}" opacity="0.9"/>
+      <rect x="${w*0.64}" y="${h*0.38}" width="${w*0.08}" height="${h*0.05}" fill="${s.mid}" opacity="0.95"/>
+      <path d="M${w*0.15} ${h*0.28} Q${w*0.21} ${h*0.18} ${w*0.27} ${h*0.28} L${w*0.27} ${h*0.32} Q${w*0.21} ${h*0.22} ${w*0.15} ${h*0.32} Z" fill="${s.mid}" opacity="0.9"/>`;
+    } else if (s.name === "abyss") {
+      // deep coral / kelp silhouettes
+      shape = `<path d="M0 ${h} Q${w*0.1} ${h*0.4} ${w*0.15} ${h*0.6} Q${w*0.2} ${h*0.3} ${w*0.25} ${h*0.55} Q${w*0.3} ${h*0.2} ${w*0.4} ${h*0.5} Q${w*0.5} ${h*0.1} ${w*0.55} ${h*0.5} Q${w*0.65} ${h*0.3} ${w*0.7} ${h*0.55} Q${w*0.8} ${h*0.25} ${w*0.85} ${h*0.5} Q${w*0.95} ${h*0.4} ${w} ${h*0.6} L${w} ${h} Z" fill="${s.mid}" opacity="0.85"/>
+      <circle cx="${w*0.2}" cy="${h*0.45}" r="2" fill="#06D6F0" opacity="0.7"/>
+      <circle cx="${w*0.55}" cy="${h*0.3}" r="2.5" fill="#A855F7" opacity="0.7"/>
+      <circle cx="${w*0.8}" cy="${h*0.4}" r="2" fill="#06D6F0" opacity="0.7"/>`;
+    } else if (s.name === "void") {
+      // floating asteroid silhouettes
+      shape = `<path d="M${w*0.1} ${h*0.5} L${w*0.18} ${h*0.4} L${w*0.25} ${h*0.55} L${w*0.2} ${h*0.65} L${w*0.12} ${h*0.6} Z" fill="${s.mid}" opacity="0.9"/>
+      <path d="M${w*0.4} ${h*0.3} L${w*0.5} ${h*0.25} L${w*0.55} ${h*0.4} L${w*0.48} ${h*0.5} L${w*0.4} ${h*0.45} Z" fill="${s.mid}" opacity="0.85"/>
+      <path d="M${w*0.7} ${h*0.55} L${w*0.78} ${h*0.45} L${w*0.85} ${h*0.6} L${w*0.78} ${h*0.7} L${w*0.7} ${h*0.65} Z" fill="${s.mid}" opacity="0.9"/>
+      <path d="M0 ${h} L${w*0.2} ${h*0.7} L${w*0.4} ${h*0.85} L${w*0.6} ${h*0.7} L${w*0.8} ${h*0.85} L${w} ${h} Z" fill="${s.mid}" opacity="0.95"/>`;
+    } else {
+      shape = `<path d="M0 ${h} L${w*0.25} ${h*0.25} L${w*0.45} ${h*0.55} L${w*0.65} ${h*0.15} L${w*0.85} ${h*0.45} L${w} ${h} Z" fill="${s.mid}" opacity="0.9"/>`;
+    }
+    bgMid.innerHTML += `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${shape}</svg>`;
+  }
+
+  // Near layer — foliage / specific stage objects
+  bgNear.innerHTML = "";
+  for (let i = 0; i < 18; i++) {
+    const x = i * 100 + Math.random() * 25;
+    const size = 40 + Math.random() * 60;
+    let shape;
+    if (s.name === "desert") {
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*0.9}" viewBox="0 0 50 45">
+        <path d="M22 42 Q22 18 18 12 Q14 14 14 22 L18 22 L18 42 Z" fill="${s.foliage}"/>
+        <path d="M22 42 Q22 12 28 8 Q34 12 32 22 L28 22 L28 42 Z" fill="${s.foliage}"/>
+        <path d="M22 42 Q22 28 36 28 Q38 30 36 32 L24 32 Z" fill="${s.foliage}"/>
+        <line x1="18" y1="14" x2="18" y2="40" stroke="#5A3008" stroke-width="0.4" opacity="0.6"/>
+        <line x1="28" y1="10" x2="28" y2="40" stroke="#5A3008" stroke-width="0.4" opacity="0.6"/>
+        <ellipse cx="22" cy="42" rx="20" ry="3" fill="${s.near}" opacity="0.6"/>
+      </svg>`;
+    } else if (s.name === "caves") {
+      const glowColor = Math.random() > 0.5 ? "#A855F7" : "#06D6F0";
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.2}" viewBox="0 0 40 50">
+        <polygon points="20,2 30,18 38,32 28,48 12,48 2,32 10,18" fill="${s.near}"/>
+        <polygon points="20,8 28,20 32,32 24,42 16,42 8,32 12,20" fill="${glowColor}" opacity="0.4"/>
+        <polygon points="20,14 26,22 28,32 22,38 18,38 12,32 14,22" fill="${glowColor}" opacity="0.65"/>
+        <circle cx="20" cy="28" r="3" fill="${glowColor}" opacity="0.9"/>
+        <circle cx="20" cy="28" r="6" fill="${glowColor}" opacity="0.25"/>
+      </svg>`;
+    } else if (s.name === "volcano") {
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.2}" viewBox="0 0 40 50">
+        <polygon points="0,48 12,8 28,8 40,48" fill="${s.near}"/>
+        <polygon points="14,8 18,2 22,8" fill="#FFE066"/>
+        <polygon points="14,8 18,16 22,8" fill="#FF4D2A" opacity="0.7"/>
+        <path d="M16 8 Q18 16 14 24 Q20 20 22 28" stroke="#FFE066" stroke-width="2" fill="none" opacity="0.8"/>
+        <path d="M8 30 L14 38 M28 32 L32 40" stroke="#FF4D2A" stroke-width="1.5" opacity="0.7"/>
+        <circle cx="20" cy="44" r="3" fill="#FFE066" opacity="0.6"/>
+      </svg>`;
+    } else if (s.name === "forest") {
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.6}" viewBox="0 0 40 64">
+        <rect x="17" y="38" width="6" height="24" fill="#2A1A10"/>
+        <line x1="17" y1="42" x2="23" y2="42" stroke="#0E0E1F" stroke-width="0.4"/>
+        <line x1="17" y1="50" x2="23" y2="50" stroke="#0E0E1F" stroke-width="0.4"/>
+        <ellipse cx="20" cy="28" rx="20" ry="22" fill="${s.near}"/>
+        <ellipse cx="20" cy="22" rx="16" ry="18" fill="${s.foliage}" opacity="0.65"/>
+        <ellipse cx="14" cy="22" rx="6" ry="8" fill="${s.foliage}" opacity="0.55"/>
+        <ellipse cx="26" cy="22" rx="6" ry="8" fill="${s.foliage}" opacity="0.55"/>
+        <circle cx="14" cy="14" r="2" fill="${s.foliage}" opacity="0.7"/>
+        <circle cx="28" cy="12" r="2.5" fill="${s.foliage}" opacity="0.7"/>
+        <circle cx="20" cy="18" r="1" fill="${s.accent}" opacity="0.9"/>
+      </svg>`;
+    } else if (s.name === "tundra") {
+      // pine tree with snow caps
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.6}" viewBox="0 0 40 64">
+        <rect x="18" y="48" width="4" height="14" fill="#3A2818"/>
+        <polygon points="20,4 32,22 8,22" fill="#1A4030"/>
+        <polygon points="20,16 30,32 10,32" fill="#1A4030"/>
+        <polygon points="20,28 32,48 8,48" fill="#1A4030"/>
+        <!-- snow on branches -->
+        <path d="M14 14 L20 10 L26 14 L24 14 L20 12 L16 14 Z" fill="#FFFEF0"/>
+        <path d="M12 26 L20 22 L28 26 L26 26 L20 24 L14 26 Z" fill="#FFFEF0"/>
+        <path d="M10 42 L20 38 L30 42 L28 42 L20 40 L12 42 Z" fill="#FFFEF0"/>
+        <ellipse cx="20" cy="62" rx="14" ry="2" fill="#D8E8FF" opacity="0.7"/>
+      </svg>`;
+    } else if (s.name === "peaks") {
+      // craggy rock with snow
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.4}" viewBox="0 0 40 56">
+        <polygon points="2,54 8,32 14,40 18,18 24,30 30,12 36,28 38,54" fill="${s.near}"/>
+        <polygon points="18,18 22,28 14,30" fill="#FFFEF0" opacity="0.9"/>
+        <polygon points="30,12 34,22 26,22" fill="#FFFEF0" opacity="0.95"/>
+        <polygon points="8,32 12,38 4,40" fill="#FFFEF0" opacity="0.7"/>
+      </svg>`;
+    } else if (s.name === "ruins") {
+      // broken column close-up with vines
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.4}" viewBox="0 0 40 56">
+        <rect x="14" y="6" width="12" height="44" fill="${s.near}"/>
+        <rect x="12" y="4" width="16" height="6" fill="${s.near}"/>
+        <rect x="12" y="48" width="16" height="6" fill="${s.near}"/>
+        <line x1="16" y1="12" x2="16" y2="48" stroke="#1A1004" stroke-width="0.3" opacity="0.6"/>
+        <line x1="20" y1="12" x2="20" y2="48" stroke="#1A1004" stroke-width="0.3" opacity="0.6"/>
+        <line x1="24" y1="12" x2="24" y2="48" stroke="#1A1004" stroke-width="0.3" opacity="0.6"/>
+        <!-- crack -->
+        <path d="M14 18 L18 24 L16 30 L20 36" stroke="#1A1004" stroke-width="0.6" fill="none" opacity="0.7"/>
+        <!-- vines -->
+        <path d="M12 6 Q10 18 14 28 Q18 36 14 50" stroke="#5A8030" stroke-width="1.2" fill="none" opacity="0.9"/>
+        <circle cx="11" cy="14" r="1.2" fill="#5A8030"/>
+        <circle cx="13" cy="22" r="1.2" fill="#5A8030"/>
+        <circle cx="15" cy="34" r="1.2" fill="#5A8030"/>
+      </svg>`;
+    } else if (s.name === "abyss") {
+      // glowing jellyfish / coral
+      const cc = Math.random() > 0.5 ? "#06D6F0" : "#A855F7";
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.4}" viewBox="0 0 40 56">
+        <path d="M8 36 Q20 30 32 36 Q34 38 32 40 L8 40 Q6 38 8 36 Z" fill="${cc}" opacity="0.55"/>
+        <path d="M12 40 Q14 50 12 56 M18 40 Q20 52 18 56 M24 40 Q26 50 24 56 M28 40 Q30 52 28 56" stroke="${cc}" stroke-width="1" fill="none" opacity="0.5"/>
+        <ellipse cx="20" cy="36" rx="12" ry="4" fill="${cc}" opacity="0.85"/>
+        <circle cx="20" cy="36" r="2" fill="#FFFEF8" opacity="0.9"/>
+        <circle cx="20" cy="36" r="6" fill="${cc}" opacity="0.25"/>
+      </svg>`;
+    } else if (s.name === "void") {
+      // crystalline shard
+      const cc = Math.random() > 0.5 ? "#A855F7" : "#FF4D6D";
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.6}" viewBox="0 0 40 64">
+        <polygon points="20,2 32,30 26,60 14,60 8,30" fill="${s.near}"/>
+        <polygon points="20,2 28,28 22,58 18,58 12,28" fill="${cc}" opacity="0.5"/>
+        <polygon points="20,8 24,28 22,52 18,52 16,28" fill="${cc}" opacity="0.85"/>
+        <polygon points="20,14 22,30 21,48 19,48 18,30" fill="#FFFEF8" opacity="0.7"/>
+        <circle cx="20" cy="32" r="6" fill="${cc}" opacity="0.3"/>
+      </svg>`;
+    } else {
+      // plains — flowers and tufts
+      shape = `<svg style="position:absolute;left:${x}px;bottom:50px;" width="${size}" height="${size*1.4}" viewBox="0 0 40 56">
+        <rect x="18" y="38" width="4" height="18" fill="#3A2A18"/>
+        <ellipse cx="20" cy="26" rx="20" ry="22" fill="${s.near}"/>
+        <ellipse cx="20" cy="22" rx="14" ry="16" fill="${s.foliage}" opacity="0.65"/>
+        <circle cx="14" cy="20" r="3" fill="${s.accent}" opacity="0.9"/>
+        <circle cx="28" cy="24" r="2.5" fill="${s.accent}" opacity="0.9"/>
+        <!-- flower -->
+        <circle cx="20" cy="14" r="2.5" fill="#FF6B85"/>
+        <circle cx="20" cy="14" r="1" fill="#FFE066"/>
+      </svg>`;
+    }
+    bgNear.innerHTML += shape;
+  }
+
+  // Ground texture
+  ground.style.background = `linear-gradient(180deg, ${s.grass} 0%, ${s.ground} 100%)`;
+  ground.innerHTML = "";
+  for (let i = 0; i < 50; i++) {
+    const tick = document.createElement("div");
+    const isGrass = s.name === "plains" || s.name === "forest";
+    let color = isGrass ? s.foliage : s.far;
+    let height = isGrass ? 6 + Math.random() * 8 : 2 + Math.random() * 3;
+    if (s.name === "volcano") {
+      // Add lava cracks occasionally
+      if (Math.random() > 0.7) {
+        color = "#FF4D2A";
+        height = 1;
+      }
+    }
+    if (s.name === "caves" && Math.random() > 0.85) {
+      color = Math.random() > 0.5 ? "#A855F7" : "#06D6F0";
+    }
+    tick.style.cssText = `position:absolute;bottom:${30+Math.random()*18}px;left:${i*36+Math.random()*12}px;width:${3+Math.random()*8}px;height:${height}px;background:${color};opacity:${0.5+Math.random()*0.4};border-radius:${isGrass?2:1}px;${color === "#FF4D2A" || color === "#A855F7" || color === "#06D6F0" ? `box-shadow:0 0 6px ${color};` : ""}`;
+    ground.appendChild(tick);
+  }
+
+  // Atmospheric particles
+  buildParticles(s);
+}
+
+function buildParticles(s) {
+  bgParticles.innerHTML = "";
+  if (s.particles === "clouds") {
+    for (let i = 0; i < 5; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = 10 + Math.random() * 30;
+      const w = 60 + Math.random() * 50;
+      p.style.cssText = `top:${top}%;right:-${w}px;width:${w}px;height:${w*0.4}px;background:radial-gradient(ellipse,rgba(255,255,255,0.7),rgba(255,255,255,0));animation:drift ${20+Math.random()*15}s linear ${-Math.random()*30}s infinite;--drift-y:${(Math.random()-0.5)*20}px;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "leaves") {
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = -10;
+      const left = Math.random() * 100;
+      const c = Math.random() > 0.5 ? "#FFB85C" : "#FF7C3C";
+      p.style.cssText = `top:${top}%;left:${left}%;width:6px;height:8px;background:${c};border-radius:50% 0;animation:leafFall ${8+Math.random()*8}s linear ${-Math.random()*10}s infinite;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "sand") {
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = 30 + Math.random() * 50;
+      p.style.cssText = `top:${top}%;right:-50px;width:${20+Math.random()*40}px;height:1px;background:rgba(255,200,140,0.6);animation:sandBlow ${4+Math.random()*4}s linear ${-Math.random()*8}s infinite;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "crystals") {
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = Math.random() * 80;
+      const left = Math.random() * 100;
+      const c = Math.random() > 0.5 ? "#A855F7" : "#06D6F0";
+      const sz = 1 + Math.random() * 2;
+      p.style.cssText = `top:${top}%;left:${left}%;width:${sz}px;height:${sz}px;background:${c};border-radius:50%;box-shadow:0 0 8px ${c};animation:pulse ${1.5+Math.random()*2}s ease-in-out ${-Math.random()*3}s infinite alternate;opacity:0.7;`;
+      bgParticles.appendChild(p);
+    }
+    // Drips
+    for (let i = 0; i < 4; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      p.style.cssText = `top:0%;left:${Math.random()*100}%;width:1.5px;height:6px;background:#06D6F0;animation:drip ${4+Math.random()*4}s linear ${-Math.random()*8}s infinite;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "embers") {
+    for (let i = 0; i < 22; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const left = Math.random() * 100;
+      const c = Math.random() > 0.5 ? "#FFE066" : "#FF4D2A";
+      const sz = 2 + Math.random() * 2;
+      p.style.cssText = `bottom:-10px;left:${left}%;width:${sz}px;height:${sz}px;background:${c};border-radius:50%;box-shadow:0 0 6px ${c};animation:embers ${3+Math.random()*4}s linear ${-Math.random()*7}s infinite;--ember-x:${(Math.random()-0.5)*80}px;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "snow") {
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const left = Math.random() * 100;
+      const sz = 2 + Math.random() * 3;
+      p.style.cssText = `top:-10px;left:${left}%;width:${sz}px;height:${sz}px;background:#FFFEF8;border-radius:50%;box-shadow:0 0 4px rgba(255,255,255,0.7);animation:snowFall ${6+Math.random()*6}s linear ${-Math.random()*10}s infinite;--snow-x:${(Math.random()-0.5)*80}px;opacity:0.8;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "mist") {
+    for (let i = 0; i < 6; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = 30 + Math.random() * 50;
+      const w = 100 + Math.random() * 80;
+      p.style.cssText = `top:${top}%;right:-${w}px;width:${w}px;height:${w*0.3}px;background:radial-gradient(ellipse,rgba(216,232,248,0.5),rgba(216,232,248,0));animation:drift ${18+Math.random()*12}s linear ${-Math.random()*30}s infinite;--drift-y:${(Math.random()-0.5)*16}px;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "motes") {
+    // dust motes drifting in light
+    for (let i = 0; i < 24; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = 20 + Math.random() * 60;
+      const left = Math.random() * 100;
+      const sz = 1 + Math.random() * 1.5;
+      p.style.cssText = `top:${top}%;left:${left}%;width:${sz}px;height:${sz}px;background:#FFE066;border-radius:50%;box-shadow:0 0 4px rgba(255,224,102,0.7);animation:moteFloat ${5+Math.random()*5}s ease-in-out ${-Math.random()*8}s infinite alternate;opacity:0.7;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "bubbles") {
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const left = Math.random() * 100;
+      const sz = 3 + Math.random() * 6;
+      p.style.cssText = `bottom:-10px;left:${left}%;width:${sz}px;height:${sz}px;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.7),rgba(6,214,240,0.2));border-radius:50%;border:0.5px solid rgba(255,255,255,0.4);animation:bubbleRise ${5+Math.random()*5}s linear ${-Math.random()*8}s infinite;--bubble-x:${(Math.random()-0.5)*40}px;`;
+      bgParticles.appendChild(p);
+    }
+    // Faint glowing creatures
+    for (let i = 0; i < 8; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = 20 + Math.random() * 60;
+      const left = Math.random() * 100;
+      const c = Math.random() > 0.5 ? "#06D6F0" : "#A855F7";
+      p.style.cssText = `top:${top}%;left:${left}%;width:3px;height:3px;background:${c};border-radius:50%;box-shadow:0 0 8px ${c};animation:moteFloat ${4+Math.random()*4}s ease-in-out ${-Math.random()*5}s infinite alternate;`;
+      bgParticles.appendChild(p);
+    }
+  } else if (s.particles === "stars") {
+    // twinkling stars and shooting stars
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = Math.random() * 80;
+      const left = Math.random() * 100;
+      const c = Math.random() > 0.85 ? "#FF4D6D" : Math.random() > 0.6 ? "#A855F7" : "#FFFEF0";
+      const sz = 1 + Math.random() * 1.8;
+      p.style.cssText = `top:${top}%;left:${left}%;width:${sz}px;height:${sz}px;background:${c};border-radius:50%;box-shadow:0 0 6px ${c};animation:twinkle ${1.5+Math.random()*3}s ease-in-out ${-Math.random()*4}s infinite alternate;`;
+      bgParticles.appendChild(p);
+    }
+    // Shooting star (just one or two, occasional)
+    for (let i = 0; i < 2; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      const top = Math.random() * 50;
+      p.style.cssText = `top:${top}%;right:-30px;width:50px;height:1px;background:linear-gradient(90deg,transparent,#FFFEF0,transparent);animation:shootStar ${8+Math.random()*8}s linear ${-Math.random()*15}s infinite;`;
+      bgParticles.appendChild(p);
+    }
+  }
+}
+
+function showStageBanner(idx) {
+  const s = STAGES[idx];
+  const wpm = s.wpm[difficulty];
+  const finalTag = idx === STAGES.length - 1 ? " · final" : "";
+  stageBanner.innerHTML = `Stage ${idx+1} · ${s.name}${finalTag}<span class="sub">monster · ${wpm} wpm</span>`;
+  stageBanner.classList.remove("show");
+  void stageBanner.offsetWidth;
+  stageBanner.classList.add("show");
+}
+
+// Pull the series name out of an attribution string ("Speaker · Series" or just "Series").
+function extractSeries(s) {
+  if (!s) return "Unknown";
+  const dot = s.lastIndexOf("·");
+  return dot === -1 ? s.trim() : s.slice(dot + 1).trim();
+}
+
+// One-time pass on page load: cache q._rawSeries on every quote, and build
+// per-mode qualifying sets / lists / "Other" counts. Threshold is applied
+// PER LENGTH MODE — a series qualifies for short mode if it has >= THRESHOLD
+// short quotes, regardless of how many medium or long it has.
+function indexSeries() {
+  const counts = {};
+  ["short", "medium", "long"].forEach(cat => {
+    (QUOTES[cat] || []).forEach(q => {
+      const s = extractSeries(q.s);
+      q._rawSeries = s;
+      if (!counts[s]) counts[s] = { short: 0, medium: 0, long: 0, total: 0 };
+      counts[s][cat]++;
+      counts[s].total++;
+    });
+  });
+  SERIES_COUNTS = counts;
+
+  ["short", "medium", "long"].forEach(cat => {
+    SERIES_QUALIFYING_PER_MODE[cat] = new Set();
+    for (const [name, c] of Object.entries(counts)) {
+      if (c[cat] >= SERIES_THRESHOLD) SERIES_QUALIFYING_PER_MODE[cat].add(name);
+    }
+    SERIES_LIST_PER_MODE[cat] = Array.from(SERIES_QUALIFYING_PER_MODE[cat])
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    SERIES_OTHER_COUNT_PER_MODE[cat] = (QUOTES[cat] || []).filter(
+      q => !SERIES_QUALIFYING_PER_MODE[cat].has(q._rawSeries)
+    ).length;
+  });
+}
+
+function loadSelectedSeries() {
+  try {
+    const v = localStorage.getItem(SERIES_KEY);
+    if (v && (v === "All" || v === "Other" || SERIES_COUNTS[v])) selectedSeries = v;
+  } catch {}
+}
+
+function saveSelectedSeries() {
+  try { localStorage.setItem(SERIES_KEY, selectedSeries); } catch {}
+}
+
+// If the selection no longer qualifies for the current length mode (e.g., user
+// picked "Pokémon" in short mode then switched to long), reset to "All" so the
+// player isn't silently playing with an inactive filter.
+function ensureValidSelection() {
+  if (selectedSeries === "All" || selectedSeries === "Other") return;
+  if (!SERIES_QUALIFYING_PER_MODE[lengthMode].has(selectedSeries)) {
+    selectedSeries = "All";
+    saveSelectedSeries();
+  }
+}
+
+function pickQuote() {
+  const pool = QUOTES[lengthMode];
+  let filtered;
+  if (selectedSeries === "All") {
+    filtered = pool;
+  } else if (selectedSeries === "Other") {
+    const qualifying = SERIES_QUALIFYING_PER_MODE[lengthMode];
+    filtered = pool.filter(q => !qualifying.has(q._rawSeries));
+  } else {
+    filtered = pool.filter(q => q._rawSeries === selectedSeries);
+  }
+  // Fallback: if the selection happens to have zero quotes in this mode (shouldn't
+  // happen with ensureValidSelection in place, but defensive), widen to all.
+  if (filtered.length === 0) filtered = pool;
+  if (usedQuotes.size >= filtered.length) usedQuotes = new Set();
+  const available = filtered.filter(q => !usedQuotes.has(q.t));
+  const pick = available[Math.floor(Math.random() * available.length)];
+  usedQuotes.add(pick.t);
+  return pick;
+}
+
+function newSentence() {
+  const q = pickQuote();
+  sentence = q.t;
+  sourceEl.textContent = "— " + q.s;
+  typed = "";
+  skipped = new Set();
+  renderSentence();
+  input.value = "";
+}
+
+function showPlaceholder() {
+  sentence = "";
+  typed = "";
+  skipped = new Set();
+  sentenceEl.innerHTML = `<span style="opacity:0.45;font-style:italic;letter-spacing:0.3px;">press start · your first line will appear here</span>`;
+  sourceEl.textContent = "";
+  input.value = "";
+}
+
+function renderSentence() {
+  let html = "";
+  for (let i = 0; i < sentence.length; i++) {
+    const c = sentence[i] === " " ? "&nbsp;" : sentence[i];
+    let cls = "ch";
+    if (skipped.has(i)) cls += " skip";
+    else if (i < typed.length) cls += typed[i] === sentence[i] ? " ok" : " bad";
+    else if (i === typed.length) cls += " cur";
+    html += `<span class="${cls}">${c}</span>`;
+  }
+  sentenceEl.innerHTML = html;
+}
+
+function updateStage() {
+  let newIdx = 0;
+  for (let i = STAGES.length - 1; i >= 0; i--) {
+    if (correctChars >= STAGES[i].thresh) { newIdx = i; break; }
+  }
+  if (newIdx !== stageIdx) {
+    stageIdx = newIdx;
+    const s = STAGES[stageIdx];
+    const wpm = s.wpm[difficulty];
+    buildSceneryFor(stageIdx);
+    stageLabel.textContent = `monster: ${wpm} wpm`;
+    document.getElementById("hud-stage").textContent = `${wpm} wpm`;
+    showStageBanner(stageIdx);
+  }
+}
+
+function spawnDust(x) {
+  const d = document.createElement("div");
+  d.className = "dust";
+  d.style.left = x + "%";
+  d.style.bottom = (44 + Math.random() * 8) + "px";
+  stage.appendChild(d);
+  let life = 0;
+  const fade = setInterval(() => {
+    life += 0.05;
+    d.style.opacity = 1 - life;
+    d.style.transform = `translateX(${-life*30}px) scale(${1+life})`;
+    if (life >= 1) { clearInterval(fade); d.remove(); }
+  }, 30);
+}
+
+function flashError() {
+  stage.classList.remove("flash");
+  void stage.offsetWidth;
+  stage.classList.add("flash");
+  setTimeout(() => stage.classList.remove("flash"), 250);
+}
+
+function getCurrentWPM() {
+  if (!gameStart) return 0;
+  const mins = (Date.now() - gameStart) / 60000;
+  return mins > 0 ? (correctChars / 5) / mins : 0;
+}
+
+function setSurge(on) {
+  if (on === isSurging) return;
+  isSurging = on;
+  if (on) { idleWarn.classList.add("show"); stage.classList.add("surge"); }
+  else { idleWarn.classList.remove("show"); stage.classList.remove("surge"); }
+}
+
+function gameLoop(ts) {
+  if (!running) return;
+  if (!lastTick) lastTick = ts;
+  const dt = Math.min(3, (ts - lastTick) / 16.67);
+  lastTick = ts;
+
+  const idleMs = Date.now() - lastInputTime;
+  const idle = idleMs > IDLE_THRESHOLD;
+  setSurge(idle);
+
+  const monsterWPM = STAGES[stageIdx].wpm[difficulty];
+  let chaseSpeed = monsterWPM / 60 * 0.025;
+  if (idle) {
+    const idleSecs = (idleMs - IDLE_THRESHOLD) / 1000;
+    const ramp = Math.min(IDLE_SURGE_MULT, 1.5 + idleSecs * 1.2);
+    chaseSpeed *= ramp;
+  }
+  monsterX += chaseSpeed * dt;
+
+  if (humanX < monsterX + 6) { endGame(); return; }
+  if (humanX > 88) humanX = 88;
+  if (monsterX < 0) monsterX = 0;
+
+  const baseSpeed = 1.2 + stageIdx * 0.35;
+  scrollFar -= baseSpeed * 0.3 * dt;
+  scrollMid -= baseSpeed * 0.6 * dt;
+  scrollNear -= baseSpeed * dt;
+  scrollX -= baseSpeed * 1.5 * dt;
+  if (scrollFar < -2000) scrollFar += 2000;
+  if (scrollMid < -1800) scrollMid += 1800;
+  if (scrollNear < -1700) scrollNear += 1700;
+  if (scrollX < -1800) scrollX += 1800;
+  bgFar.style.transform = `translateX(${scrollFar}px)`;
+  bgMid.style.transform = `translateX(${scrollMid}px)`;
+  bgNear.style.transform = `translateX(${scrollNear}px)`;
+  ground.style.transform = `translateX(${scrollX}px)`;
+
+  human.style.left = humanX + "%";
+  monster.style.left = monsterX + "%";
+
+  dustTimer += dt;
+  if (dustTimer > 8) { dustTimer = 0; spawnDust(humanX - 1); spawnDust(monsterX); }
+
+  const gap = humanX - monsterX;
+  const pct = Math.max(0, Math.min(100, gap * 1.2));
+  gapFill.style.width = pct + "%";
+  gapFill.classList.remove("warn", "danger");
+  if (gap < 12) gapFill.classList.add("danger");
+  else if (gap < 25) gapFill.classList.add("warn");
+
+  distance += 0.06 * dt;
+  document.getElementById("hud-dist").textContent = Math.floor(distance) + "m";
+
+  const wpm = Math.round(getCurrentWPM());
+  document.getElementById("hud-wpm").textContent = wpm;
+
+  wpmSampleTimer += dt;
+  if (wpmSampleTimer > 30) {
+    wpmSampleTimer = 0;
+    const t = (Date.now() - gameStart) / 1000;
+    if (t > 0.5) wpmHistory.push({t, wpm, monster: monsterWPM});
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function start() {
+  gameState = "running";
+  running = true;
+  humanX = 38; monsterX = 6;
+  score = 0; distance = 0;
+  stageIdx = 0;
+  totalChars = 0; correctChars = 0;
+  gameStart = Date.now();
+  lastInputTime = Date.now();
+  lastTick = 0;
+  isSurging = false;
+  setSurge(false);
+  scrollX = 0; scrollFar = 0; scrollMid = 0; scrollNear = 0;
+  usedQuotes = new Set();
+  wpmHistory = [];
+  wpmSampleTimer = 0;
+  const startWPM = STAGES[0].wpm[difficulty];
+  document.getElementById("hud-score").textContent = "0";
+  document.getElementById("hud-stage").textContent = startWPM + " wpm";
+  document.getElementById("hud-wpm").textContent = "0";
+  document.getElementById("hud-dist").textContent = "0m";
+  buildSceneryFor(0);
+  stageLabel.textContent = "monster: " + startWPM + " wpm";
+  overlay.style.display = "none";
+  document.getElementById("lb-overlay").style.display = "none";
+  const ro = document.getElementById("ready-overlay");
+  ro.classList.add("hidden");
+  setTimeout(() => { if (gameState === "running") ro.style.display = "none"; }, 400);
+  input.disabled = false;
+  showStageBanner(0);
+  newSentence();
+  input.focus();
+  requestAnimationFrame(gameLoop);
+}
+
+let gameState = "ready"; // "ready" | "running" | "ended"
+let lastEndStats = null;
+
+function showReady() {
+  gameState = "ready";
+  running = false;
+  isSurging = false;
+  setSurge(false);
+  humanX = 38; monsterX = 6;
+  stageIdx = 0;
+  score = 0; correctChars = 0; totalChars = 0; distance = 0;
+  scrollX = 0; scrollFar = 0; scrollMid = 0; scrollNear = 0;
+  buildSceneryFor(0);
+  human.style.left = humanX + "%";
+  monster.style.left = monsterX + "%";
+  bgFar.style.transform = bgMid.style.transform = bgNear.style.transform = ground.style.transform = "translateX(0)";
+  const startWPM = STAGES[0].wpm[difficulty];
+  document.getElementById("hud-stage").textContent = startWPM + " wpm";
+  document.getElementById("hud-score").textContent = "0";
+  document.getElementById("hud-wpm").textContent = "0";
+  document.getElementById("hud-dist").textContent = "0m";
+  stageLabel.textContent = "monster: " + startWPM + " wpm";
+  gapFill.style.width = "60%";
+  gapFill.classList.remove("warn", "danger");
+  const seriesLabel = selectedSeries === "All" ? "all series"
+                    : selectedSeries === "Other" ? "other"
+                    : selectedSeries.toLowerCase();
+  document.getElementById("ready-meta").textContent = `${DIFFICULTIES[difficulty].label.toLowerCase()} · ${lengthMode} · ${seriesLabel}`;
+  const ro = document.getElementById("ready-overlay");
+  ro.style.display = "flex";
+  void ro.offsetWidth;
+  ro.classList.remove("hidden");
+  overlay.style.display = "none";
+  document.getElementById("lb-overlay").style.display = "none";
+  input.disabled = true;
+  showPlaceholder();
+}
+
+/* Leaderboard storage */
+function loadLeaderboard() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LB_KEY));
+    return (v && typeof v === "object") ? { easy: v.easy || [], medium: v.medium || [], hard: v.hard || [] } : { easy: [], medium: [], hard: [] };
+  } catch { return { easy: [], medium: [], hard: [] }; }
+}
+
+function saveLeaderboard(lb) {
+  try { localStorage.setItem(LB_KEY, JSON.stringify(lb)); } catch {}
+}
+
+function loadPlayerName() {
+  try { return localStorage.getItem(NAME_KEY) || ""; } catch { return ""; }
+}
+
+function savePlayerName(name) {
+  try { if (name) localStorage.setItem(NAME_KEY, name); } catch {}
+}
+
+function addLeaderboardEntry(entry) {
+  const lb = loadLeaderboard();
+  const arr = lb[entry.difficulty] || [];
+  arr.push(entry);
+  arr.sort((a, b) => b.score - a.score);
+  lb[entry.difficulty] = arr.slice(0, MAX_LB_ENTRIES);
+  saveLeaderboard(lb);
+  return lb[entry.difficulty].findIndex(e => e === entry || (e.name === entry.name && e.score === entry.score && e.date === entry.date));
+}
+
+function clearLeaderboard() {
+  saveLeaderboard({ easy: [], medium: [], hard: [] });
+}
+
+function renderLeaderboard(activeTab, highlightDate) {
+  const lb = loadLeaderboard();
+  const list = document.getElementById("lb-list");
+  const entries = lb[activeTab] || [];
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="lb-empty">No scores yet. Be the first.</div>`;
+    return;
+  }
+  list.innerHTML = entries.map((e, i) => {
+    const isYou = e.date === highlightDate;
+    return `<div class="lb-row${isYou ? ' you' : ''}">
+      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-name">${escapeHTML(e.name || 'anonymous')}</span>
+      <span class="lb-score">${e.score}</span>
+      <span class="lb-stage">stg ${e.stage}/10</span>
+      <span class="lb-len">${e.length}</span>
+    </div>`;
+  }).join("");
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let lbPausedRun = false;
+
+function showLeaderboard(activeTab, highlightDate) {
+  const tab = activeTab || difficulty;
+  document.querySelectorAll(".lb-tabs button").forEach(b => b.classList.toggle("active", b.dataset.difftab === tab));
+  renderLeaderboard(tab, highlightDate);
+  if (gameState === "running") {
+    lbPausedRun = true;
+    running = false;
+    setSurge(false);
+  }
+  document.getElementById("lb-overlay").style.display = "flex";
+}
+
+function hideLeaderboard() {
+  document.getElementById("lb-overlay").style.display = "none";
+  if (lbPausedRun) {
+    lbPausedRun = false;
+    if (gameState === "running") {
+      running = true;
+      lastTick = 0;
+      lastInputTime = Date.now();
+      requestAnimationFrame(gameLoop);
+      input.focus();
+    }
+  }
+}
+
+function commitScore() {
+  if (!lastEndStats) return null;
+  const nameInput = document.getElementById("ov-name");
+  const name = (nameInput.value || "").trim().slice(0, 14);
+  if (!name) return null;
+  savePlayerName(name);
+  const entry = { ...lastEndStats, name, date: Date.now() };
+  addLeaderboardEntry(entry);
+  return entry;
+}
+
+function drawWPMChart() {
+  const svg = document.getElementById("chart-svg");
+  const W = 440, H = 70;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  if (wpmHistory.length < 2) {
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="12" font-family="JetBrains Mono">not enough data</text>`;
+    return;
+  }
+  const maxT = wpmHistory[wpmHistory.length-1].t;
+  const allWPM = wpmHistory.flatMap(d => [d.wpm, d.monster]);
+  const maxWPM = Math.max(...allWPM, 50) * 1.1;
+  const xScale = t => 32 + (t / maxT) * (W - 52);
+  const yScale = w => H - 20 - (w / maxWPM) * (H - 32);
+  let humanPath = "", monsterPath = "", humanArea = "";
+  wpmHistory.forEach((d, i) => {
+    const x = xScale(d.t);
+    humanPath += (i === 0 ? "M" : "L") + x + "," + yScale(d.wpm) + " ";
+    monsterPath += (i === 0 ? "M" : "L") + x + "," + yScale(d.monster) + " ";
+  });
+  humanArea = humanPath + `L${xScale(maxT)},${H-20} L${xScale(0)},${H-20} Z`;
+  let html = `<defs>
+    <linearGradient id="humanArea" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#4ADE80" stop-opacity="0"/>
+    </linearGradient>
+  </defs>`;
+  for (let i = 0; i <= 3; i++) {
+    const w = (maxWPM / 3) * i;
+    const y = yScale(w);
+    html += `<line x1="32" y1="${y}" x2="${W-20}" y2="${y}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+    html += `<text x="26" y="${y+3}" text-anchor="end" fill="rgba(255,255,255,0.4)" font-size="9" font-family="JetBrains Mono">${Math.round(w)}</text>`;
+  }
+  html += `<path d="${humanArea}" fill="url(#humanArea)"/>`;
+  html += `<path d="${monsterPath}" fill="none" stroke="#FF4D6D" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="5 4"/>`;
+  html += `<path d="${humanPath}" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linejoin="round" filter="drop-shadow(0 0 4px #4ADE80)"/>`;
+  html += `<text x="${W-20}" y="9" text-anchor="end" fill="#4ADE80" font-size="8" font-family="Inter" font-weight="600">─ you</text>`;
+  html += `<text x="${W-66}" y="9" text-anchor="end" fill="#FF4D6D" font-size="8" font-family="Inter" font-weight="600">- - monster</text>`;
+  html += `<text x="32" y="${H-2}" fill="rgba(255,255,255,0.4)" font-size="8" font-family="JetBrains Mono">0s</text>`;
+  html += `<text x="${W-20}" y="${H-2}" text-anchor="end" fill="rgba(255,255,255,0.4)" font-size="8" font-family="JetBrains Mono">${Math.round(maxT)}s</text>`;
+  svg.innerHTML = html;
+}
+
+function endGame() {
+  running = false;
+  gameState = "ended";
+  setSurge(false);
+  input.disabled = true;
+  const idleEnded = (Date.now() - lastInputTime) > IDLE_THRESHOLD;
+  const finalWPM = Math.round(getCurrentWPM());
+  const reason = idleEnded ? "stopped typing" : "monster caught up";
+  document.getElementById("ov-title").textContent = "Game Over";
+  document.getElementById("ov-sub").textContent = `${reason} · score ${score} · ${Math.floor(distance)}m · ${finalWPM} wpm · stage ${stageIdx + 1}/10`;
+  lastEndStats = {
+    score,
+    distance: Math.floor(distance),
+    wpm: finalWPM,
+    stage: stageIdx + 1,
+    difficulty,
+    length: lengthMode
+  };
+  const nameInput = document.getElementById("ov-name");
+  nameInput.value = loadPlayerName();
+  drawWPMChart();
+  overlay.style.display = "flex";
+}
+
+function skipToNextWord() {
+  let i = typed.length;
+  while (i < sentence.length && sentence[i] !== " ") { skipped.add(i); i++; }
+  if (i < sentence.length) { skipped.add(i); i++; }
+  typed = sentence.slice(0, i).split("").map((c, idx) => skipped.has(idx) ? c : (typed[idx] !== undefined ? typed[idx] : c)).join("");
+  input.value = typed;
+  monsterX += 2.5;
+  renderSentence();
+  if (typed.length >= sentence.length) finishSentence();
+}
+
+function finishSentence() {
+  humanX += 5; monsterX -= 3.5;
+  if (humanX > 88) humanX = 88;
+  if (monsterX < 2) monsterX = 2;
+  setTimeout(() => { newSentence(); }, 250);
+}
+
+input.addEventListener("keydown", e => {
+  // Always swallow Tab on the input regardless of state — prevents focus-loss bugs.
+  if (e.key === "Tab") {
+    e.preventDefault();
+    if (running) { lastInputTime = Date.now(); skipToNextWord(); }
+    return;
+  }
+  if (!running) return;
+  lastInputTime = Date.now();
+});
+
+input.addEventListener("input", e => {
+  if (!running) return;
+  // Sentence is fully typed and we're in the 250ms hand-off to the next quote.
+  // Eat any extra keystrokes so a stray space/character doesn't mis-trigger anything.
+  if (typed.length >= sentence.length) {
+    e.target.value = typed;
+    return;
+  }
+  lastInputTime = Date.now();
+  let newTyped = e.target.value;
+  if (newTyped.length > typed.length) {
+    const idx = newTyped.length - 1;
+    // Block space at the very start of a new sentence — only Tab can skip then.
+    if (typed.length === 0 && newTyped[idx] === " ") {
+      e.target.value = "";
+      return;
+    }
+    if (skipped.has(idx)) {
+      typed = newTyped;
+      renderSentence();
+      if (typed.length >= sentence.length) finishSentence();
+      return;
+    }
+    const newChar = newTyped[idx];
+    const expected = sentence[idx];
+    totalChars++;
+    if (newChar === " " && expected !== " ") {
+      e.target.value = typed;
+      skipToNextWord();
+      return;
+    }
+    if (newChar === expected) {
+      correctChars++;
+      score += SCORE_MULT[difficulty];
+      humanX += 0.5; monsterX -= 0.3;
+      if (humanX > 88) humanX = 88;
+      if (monsterX < 2) monsterX = 2;
+      document.getElementById("hud-score").textContent = score;
+      updateStage();
+    } else {
+      monsterX += 0.5;
+      flashError();
+    }
+  }
+  typed = newTyped;
+  renderSentence();
+  if (typed.length >= sentence.length) finishSentence();
+});
+
+document.querySelectorAll("#length-toggle button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#length-toggle button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    lengthMode = btn.dataset.len;
+    // If the previously-selected series doesn't qualify in the new length mode,
+    // silently reset to "All" so the player isn't running with an invisible filter.
+    ensureValidSelection();
+    refreshSeriesTrigger();
+    // If the series picker is currently open, re-render it so the qualifying
+    // list reflects the new length mode.
+    if (document.getElementById("series-overlay").style.display === "flex") {
+      renderSeriesGrid();
+    }
+    showReady();
+  });
+});
+
+document.querySelectorAll(".diff-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    difficulty = btn.dataset.diff;
+    showReady();
+  });
+});
+
+document.getElementById("restart").addEventListener("click", () => showReady());
+document.getElementById("ready-start-btn").addEventListener("click", () => start());
+
+document.getElementById("ov-btn").addEventListener("click", () => {
+  commitScore();
+  showReady();
+});
+
+document.getElementById("ov-skip").addEventListener("click", () => {
+  showReady();
+});
+
+document.getElementById("ov-leaderboard").addEventListener("click", () => {
+  const entry = commitScore();
+  showLeaderboard(difficulty, entry ? entry.date : null);
+});
+
+document.getElementById("view-leaderboard").addEventListener("click", () => {
+  showLeaderboard(difficulty, null);
+});
+
+function renderSeriesGrid() {
+  const grid = document.getElementById("series-grid");
+  // The qualifying list and Other count both depend on the current length mode.
+  const list = SERIES_LIST_PER_MODE[lengthMode];
+  const otherCount = SERIES_OTHER_COUNT_PER_MODE[lengthMode];
+  const totalAll = QUOTES.short.length + QUOTES.medium.length + QUOTES.long.length;
+  const items = [{ name: "All", count: QUOTES[lengthMode].length, total: totalAll }];
+  if (otherCount > 0) items.push({ name: "Other", count: otherCount, total: null });
+  list.forEach(s => items.push({ name: s, count: SERIES_COUNTS[s][lengthMode], total: SERIES_COUNTS[s].total }));
+  grid.innerHTML = items.map(it => {
+    const isActive = it.name === selectedSeries;
+    const tip = it.total != null
+      ? `${it.count} ${lengthMode} · ${it.total} total across all length modes`
+      : `${it.count} ${lengthMode} quotes`;
+    return `<button class="series-pick${isActive ? ' active' : ''}" data-series="${escapeHTML(it.name)}" title="${escapeHTML(tip)}">
+      <span class="name">${escapeHTML(it.name)}</span>
+      <span class="count-stack">
+        <span class="count-total">${it.count}</span>
+        <span class="count-mode">${lengthMode}</span>
+      </span>
+    </button>`;
+  }).join("");
+}
+
+
+let seriesPausedRun = false;
+
+function showSeriesPicker() {
+  document.getElementById("series-thresh-label").textContent = SERIES_THRESHOLD;
+  renderSeriesGrid();
+  if (gameState === "running") {
+    seriesPausedRun = true;
+    running = false;
+    setSurge(false);
+  }
+  document.getElementById("series-overlay").style.display = "flex";
+}
+
+function hideSeriesPicker(resumeIfPaused = true) {
+  document.getElementById("series-overlay").style.display = "none";
+  if (resumeIfPaused && seriesPausedRun) {
+    seriesPausedRun = false;
+    if (gameState === "running") {
+      running = true;
+      lastTick = 0;
+      lastInputTime = Date.now();
+      requestAnimationFrame(gameLoop);
+      input.focus();
+    }
+  }
+}
+
+function refreshSeriesTrigger() {
+  const label = selectedSeries === "All" ? "all"
+              : selectedSeries === "Other" ? "other"
+              : selectedSeries.toLowerCase();
+  document.getElementById("series-current").textContent = label;
+  document.getElementById("open-series").classList.toggle("active-filter", selectedSeries !== "All");
+}
+
+document.getElementById("open-series").addEventListener("click", showSeriesPicker);
+document.getElementById("series-back").addEventListener("click", hideSeriesPicker);
+document.getElementById("series-grid").addEventListener("click", e => {
+  const btn = e.target.closest(".series-pick");
+  if (!btn) return;
+  selectedSeries = btn.dataset.series;
+  saveSelectedSeries();
+  refreshSeriesTrigger();
+  seriesPausedRun = false; // we're going to ready state, no need to resume
+  hideSeriesPicker(false);
+  showReady();
+});
+
+document.querySelectorAll(".lb-tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    showLeaderboard(btn.dataset.difftab, null);
+  });
+});
+
+document.getElementById("lb-back").addEventListener("click", () => {
+  hideLeaderboard();
+  if (gameState === "ended") {
+    overlay.style.display = "flex";
+  } else if (gameState === "ready") {
+    document.getElementById("ready-overlay").style.display = "flex";
+    document.getElementById("ready-overlay").classList.remove("hidden");
+  }
+});
+
+document.getElementById("lb-clear").addEventListener("click", () => {
+  if (confirm("Clear all leaderboard entries? This cannot be undone.")) {
+    clearLeaderboard();
+    const activeTab = document.querySelector(".lb-tabs button.active")?.dataset.difftab || difficulty;
+    renderLeaderboard(activeTab, null);
+  }
+});
+
+// Click anywhere on the game refocuses the input (only while running)
+document.getElementById("game").addEventListener("click", e => {
+  if (gameState === "running" && e.target.tagName !== "BUTTON" && e.target.tagName !== "INPUT") {
+    input.focus();
+  }
+});
+
+// While the game is running, no key should ever scroll the page or activate
+// stray buttons — refocus the typing input and swallow scroll-causing keys.
+window.addEventListener("keydown", e => {
+  if (gameState !== "running") return;
+  if (e.target === input) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === " " || e.key === "Spacebar" ||
+      e.key === "ArrowUp" || e.key === "ArrowDown" ||
+      e.key === "ArrowLeft" || e.key === "ArrowRight" ||
+      e.key === "PageUp" || e.key === "PageDown" ||
+      e.key === "Home" || e.key === "End" ||
+      e.key === "Tab") {
+    e.preventDefault();
+  }
+  input.focus();
+});
+
+// Enter key on the end-screen name input saves and returns to the ready gate
+document.getElementById("ov-name").addEventListener("keydown", e => {
+  if (e.key === "Enter") { commitScore(); showReady(); }
+});
+
+// Initial paint: index the series pool, restore last selection, then show
+// the ready gate. showReady() handles initial scenery via buildSceneryFor(0).
+indexSeries();
+loadSelectedSeries();
+ensureValidSelection();
+refreshSeriesTrigger();
+showReady();
+</script>
+
+</body>
+</html>
