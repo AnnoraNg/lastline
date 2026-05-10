@@ -1,6 +1,6 @@
 # Last Line
 
-A side-scrolling anime typing game. Type real anime quotes to outrun the monster — or get eaten.
+A side-scrolling anime typing game. Type real anime quotes to outrun the monster or get eaten.
 
 ## About
 
@@ -9,7 +9,7 @@ Keyboard-only browser game. The player runs from left to right while a monster c
 - **3 difficulty modes**: Easy, Medium, Hard, with score multipliers ×1 / ×2 / ×3
 - **3 quote-length modes**: short, medium, long
 - **~7,900 real anime quotes** across 700+ series
-- **Series filter** to play only your favorite show (e.g. Naruto only, Bleach only)
+- **Series filter** to play only your favorite anime (e.g. Naruto only, Bleach only)
 - **Local leaderboard** per difficulty, persisted in your browser
 
 ## How to play
